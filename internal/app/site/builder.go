@@ -7,13 +7,18 @@ import (
 	"html/template"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"unicode"
 
+	"github.com/gomarkdown/markdown"
+
 	"github.com/nevenkitasuno/blog-ssg/internal/domain"
 	"github.com/nevenkitasuno/blog-ssg/internal/infra/state"
 )
+
+var embeddedImagePattern = regexp.MustCompile(`!\[\[([^\]]+)\]\]`)
 
 type Loader interface {
 	Load() (domain.Blog, error)
@@ -256,7 +261,7 @@ func (b *Builder) planEntryFiles(topic domain.Topic, topicBaseDir string) []gene
 				EntryName:   entry.Name,
 				Tags:        buildPageTags(pagePath, topicBaseDir, entry),
 				PageNumber:  page.Number,
-				ContentHTML: page.File.HTML,
+				ContentHTML: renderPageHTML(page.File.Body, pagePath, entryDir),
 				HomeURL:     relativePath(pagePath, filepath.Join(b.outputDir, "index.html")),
 				CSS:         relativePath(pagePath, filepath.Join(b.outputDir, "style.css")),
 				Icon:        relativePath(pagePath, filepath.Join(b.outputDir, "images", "favicon.png")),
@@ -275,6 +280,7 @@ func (b *Builder) planEntryFiles(topic domain.Topic, topicBaseDir string) []gene
 			viewCopy := view
 			fingerprint := hashStrings(
 				b.renderer.Digest(),
+				"page-render-v2",
 				topic.Name,
 				entry.Name,
 				fmt.Sprintf("%d", page.Number),
@@ -290,6 +296,23 @@ func (b *Builder) planEntryFiles(topic domain.Topic, topicBaseDir string) []gene
 				fingerprint: fingerprint,
 				render: func() ([]byte, error) {
 					return b.renderer.RenderPage(viewCopy)
+				},
+			})
+		}
+
+		for _, asset := range entry.Assets {
+			assetPath := filepath.Join(entryDir, asset.Name)
+			fingerprint, err := fileFingerprint(asset.Path)
+			if err != nil {
+				continue
+			}
+
+			sourcePath := asset.Path
+			files = append(files, generatedFile{
+				path:        assetPath,
+				fingerprint: fingerprint,
+				render: func() ([]byte, error) {
+					return os.ReadFile(sourcePath)
 				},
 			})
 		}
@@ -477,6 +500,33 @@ func buildPageTags(pagePath, topicBaseDir string, entry domain.Entry) []pageTagV
 		})
 	}
 	return tags
+}
+
+func renderPageHTML(markdownBody, pagePath, entryDir string) template.HTML {
+	normalized := embeddedImagePattern.ReplaceAllStringFunc(markdownBody, func(match string) string {
+		submatches := embeddedImagePattern.FindStringSubmatch(match)
+		if len(submatches) != 2 {
+			return match
+		}
+
+		imageName := strings.TrimSpace(submatches[1])
+		if imageName == "" {
+			return match
+		}
+
+		imagePath := relativePath(pagePath, filepath.Join(entryDir, imageName))
+		return fmt.Sprintf("![](%s)", imagePath)
+	})
+
+	return template.HTML(markdown.ToHTML([]byte(normalized), nil, nil))
+}
+
+func fileFingerprint(path string) (string, error) {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	return hashStrings(path, string(content)), nil
 }
 
 func slugifySegment(value string) string {

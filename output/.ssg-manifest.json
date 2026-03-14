@@ -1,10 +1,11 @@
 {
   "files": {
     "output/index.html": "3685f762d120fd4dfe7670cb8e14bfdf88a5f2109891df91e2b9437722325579",
-    "output/topics/internet-café/2026-01-unknown-test-book/2/index.html": "1d1a1f7df32e72af6a92f657c0fa98ae699bfe4813b173598c638d46f07334a8",
-    "output/topics/internet-café/2026-01-unknown-test-book/index.html": "f5fb3e72dbb02b7c9aaaa8bc2aeae2a7c5a582d381afa65186207695f80c37c5",
-    "output/topics/internet-café/index.html": "57e514d5ea4ced642cffe8c93a54b5348a3ff417a162d2855d3fba1ebd1f07a5",
-    "output/topics/internet-café/tags/go/index.html": "3dab92f3393b7a159d42f269e3244d9ddc319f8859177f757cf594fd2e0f516c",
-    "output/topics/internet-café/tags/html/index.html": "d7e3df2ca23b3f82557ab4d6bcf72e232cf135a97b73cb9b12ed1639c9b2c08c"
+    "output/topics/internet-café/2026-01-unknown-test-book/2/index.html": "0def510b84777942ae5f01434704bfe9432fbdf7d3780f503eeb53f5d5ff5aff",
+    "output/topics/internet-café/2026-01-unknown-test-book/image.png": "0b062e24b930c9a96049b60be37018c74081c4d15e07728852a942b5e8167c1d",
+    "output/topics/internet-café/2026-01-unknown-test-book/index.html": "9066c4723e53845495a95585bbde0b2661abed045b7b59abda62dd099001ca08",
+    "output/topics/internet-café/index.html": "4796d14c09f3fce147e115027429434afbafdf5a149da98c7a5f6ca00286e782",
+    "output/topics/internet-café/tags/go/index.html": "03c5701af3042ba256673fdb1796d83573af6ec2fb080300090d866a881ae466",
+    "output/topics/internet-café/tags/html/index.html": "75f37148ab6098a08be1040e21c62dfa578bce3ebe8ea2b944b0824848b7f95b"
   }
 }

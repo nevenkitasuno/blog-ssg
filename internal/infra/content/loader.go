@@ -2,7 +2,6 @@ package content
 
 import (
 	"fmt"
-	"html/template"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -11,7 +10,6 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/gomarkdown/markdown"
 	"gopkg.in/yaml.v2"
 
 	"github.com/nevenkitasuno/blog-ssg/internal/domain"
@@ -132,17 +130,26 @@ func (l *Loader) loadEntry(topicName, dirName string) (domain.Entry, bool, error
 	}
 
 	entry := domain.Entry{
-		Name:  dirName,
-		Slug:  slugify(dirName),
-		Year:  year,
-		Month: month,
-		Title: title,
-		Tags:  nil,
-		Pages: make([]domain.Page, 0, len(files)),
+		Name:   dirName,
+		Slug:   slugify(dirName),
+		Year:   year,
+		Month:  month,
+		Title:  title,
+		Tags:   nil,
+		Assets: make([]domain.Asset, 0),
+		Pages:  make([]domain.Page, 0, len(files)),
 	}
 
 	for _, file := range files {
 		if file.IsDir() {
+			continue
+		}
+
+		if filepath.Ext(file.Name()) != ".md" {
+			entry.Assets = append(entry.Assets, domain.Asset{
+				Name: file.Name(),
+				Path: filepath.Join(l.contentDir, topicName, dirName, file.Name()),
+			})
 			continue
 		}
 
@@ -161,6 +168,9 @@ func (l *Loader) loadEntry(topicName, dirName string) (domain.Entry, bool, error
 
 	slices.SortFunc(entry.Pages, func(left, right domain.Page) int {
 		return left.Number - right.Number
+	})
+	slices.SortFunc(entry.Assets, func(left, right domain.Asset) int {
+		return strings.Compare(left.Name, right.Name)
 	})
 	if len(entry.Pages) > 0 && entry.Pages[0].Number == 1 {
 		tags, err := extractTagsFromFile(entry.Pages[0].File.Path)
@@ -204,7 +214,6 @@ func (l *Loader) loadPage(topicName, entryName, fileName string) (domain.Page, b
 		File: domain.MarkdownFile{
 			Path: path,
 			Body: trimmed,
-			HTML: template.HTML(markdown.ToHTML([]byte(trimmed), nil, nil)),
 		},
 	}, true, nil
 }

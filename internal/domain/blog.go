@@ -1,7 +1,5 @@
 package domain
 
-import "html/template"
-
 type Blog struct {
 	Topics []Topic
 }
@@ -13,13 +11,19 @@ type Topic struct {
 }
 
 type Entry struct {
-	Name  string
-	Slug  string
-	Year  int
-	Month int
-	Title string
-	Tags  []string
-	Pages []Page
+	Name   string
+	Slug   string
+	Year   int
+	Month  int
+	Title  string
+	Tags   []string
+	Assets []Asset
+	Pages  []Page
+}
+
+type Asset struct {
+	Name string
+	Path string
 }
 
 type Page struct {
@@ -30,5 +34,4 @@ type Page struct {
 type MarkdownFile struct {
 	Path string
 	Body string
-	HTML template.HTML
 }
