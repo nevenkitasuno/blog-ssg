@@ -1,6 +1,6 @@
 # blog-ssg
 
-Cтатический генератор блога на Go.
+Static site generator блога.
 
 - Читает Markdown контент из `content/`
 - Поддержка тегов и картинок (пример в `content/Моя галерея`)
