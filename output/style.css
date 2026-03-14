@@ -202,3 +202,21 @@ header a + a {
 .archive-nav li {
     margin: 0;
 }
+
+.site-footer {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    font-size: 0.9rem;
+    color: #666;
+    justify-content: center;
+}
+
+.site-footer p {
+    margin: 0;
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
