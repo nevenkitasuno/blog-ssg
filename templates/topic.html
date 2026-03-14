@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Name}}</title>
+    <link rel="stylesheet" href="{{.CSS}}">
+    <link rel="icon" href="{{.Icon}}" type="image/png">
+</head>
+<body>
+    <p><a href="{{.Home}}">Темы</a></p>
+    <h1>{{.Name}}</h1>
+
+    <ul>
+        {{range .Years}}
+        <li><a href="#year-{{.Year}}">{{.Year}}</a></li>
+        {{end}}
+    </ul>
+
+    {{range .Years}}
+    <h2 id="year-{{.Year}}">{{.Year}}</h2>
+    <ul>
+        {{range .Entries}}
+        <li><a href="{{.URL}}">{{.Label}}</a></li>
+        {{end}}
+    </ul>
+    {{end}}
+</body>
+</html>

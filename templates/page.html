@@ -3,16 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Темы</title>
+    <title>{{.EntryName}}</title>
     <link rel="stylesheet" href="{{.CSS}}">
     <link rel="icon" href="{{.Icon}}" type="image/png">
 </head>
 <body>
-    <h1>Темы</h1>
-    <ul>
-        {{range .Topics}}
-        <li><a href="{{.URL}}">{{.Name}}</a></li>
-        {{end}}
-    </ul>
+    <p><a href="{{.HomeURL}}">Темы</a> / <a href="{{.TopicURL}}">{{.TopicName}}</a></p>
+    <h1>{{.EntryName}}</h1>
+
+    <main>
+        {{.ContentHTML}}
+    </main>
+
+    <p><a href="{{.NextURL}}">{{.NextLabel}}</a></p>
 </body>
 </html>
