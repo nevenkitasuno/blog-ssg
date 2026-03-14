@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"unicode"
 
 	"github.com/nevenkitasuno/blog-ssg/internal/domain"
 	"github.com/nevenkitasuno/blog-ssg/internal/infra/state"
@@ -70,12 +71,22 @@ type topicEntryView struct {
 	URL   string
 }
 
+type topicTagView struct {
+	Name    string
+	URL     string
+	Current bool
+}
+
 type topicView struct {
-	Name  string
-	Years []topicYearView
-	Home  string
-	CSS   string
-	Icon  string
+	Name        string
+	Description string
+	Years       []topicYearView
+	Tags        []topicTagView
+	Home        string
+	ParentName  string
+	ParentURL   string
+	CSS         string
+	Icon        string
 }
 
 type pageView struct {
@@ -179,7 +190,7 @@ func (b *Builder) plan(blog domain.Blog) ([]generatedFile, error) {
 		topicPath := filepath.Join(b.outputDir, "topics", topic.Slug, "index.html")
 		topicFingerprint := hashStrings(templateDigest, topic.Name)
 		for _, entry := range topic.Entries {
-			topicFingerprint = hashStrings(topicFingerprint, entry.Name)
+			topicFingerprint = hashStrings(topicFingerprint, entry.Name, strings.Join(entry.Tags, "\x00"))
 			for _, page := range entry.Pages {
 				topicFingerprint = hashStrings(topicFingerprint, page.File.Path, page.File.Body)
 			}
@@ -194,6 +205,8 @@ func (b *Builder) plan(blog domain.Blog) ([]generatedFile, error) {
 			},
 		})
 
+		tagFiles := b.planTagFiles(topic)
+		files = append(files, tagFiles...)
 		entryFiles := b.planEntryFiles(topic, filepath.Join(b.outputDir, "topics", topic.Slug))
 		files = append(files, entryFiles...)
 	}
@@ -260,6 +273,7 @@ func (b *Builder) planEntryFiles(topic domain.Topic, topicBaseDir string) []gene
 				fmt.Sprintf("%d", page.Number),
 				page.File.Path,
 				page.File.Body,
+				strings.Join(entry.Tags, "\x00"),
 				view.NextLabel,
 				view.NextURL,
 			)
@@ -277,18 +291,105 @@ func (b *Builder) planEntryFiles(topic domain.Topic, topicBaseDir string) []gene
 	return files
 }
 
+func (b *Builder) planTagFiles(topic domain.Topic) []generatedFile {
+	tagEntries := make(map[string][]domain.Entry)
+	tagNames := collectTopicTags(topic)
+	files := make([]generatedFile, 0, len(tagNames))
+
+	for _, entry := range topic.Entries {
+		for _, tag := range entry.Tags {
+			tagEntries[tag] = append(tagEntries[tag], entry)
+		}
+	}
+
+	for _, tag := range tagNames {
+		view := buildArchiveView(
+			topic.Name,
+			fmt.Sprintf("Тег: %s", tag),
+			filepath.ToSlash(filepath.Join("..", "..", "..", "..", "index.html")),
+			topic.Name,
+			filepath.ToSlash(filepath.Join("..", "..", "index.html")),
+			filepath.ToSlash(filepath.Join("..", "..", "..", "..", "style.css")),
+			filepath.ToSlash(filepath.Join("..", "..", "..", "..", "images", "favicon.png")),
+			tagEntries[tag],
+			tagNames,
+			tag,
+			func(entry domain.Entry) string {
+				return filepath.ToSlash(filepath.Join("..", "..", entry.Slug, "index.html"))
+			},
+			func(name string) string {
+				return filepath.ToSlash(filepath.Join("..", slugifySegment(name), "index.html"))
+			},
+		)
+
+		path := filepath.Join(b.outputDir, "topics", topic.Slug, "tags", slugifySegment(tag), "index.html")
+		fingerprint := hashStrings(b.renderer.Digest(), topic.Name, tag)
+		for _, entry := range tagEntries[tag] {
+			fingerprint = hashStrings(fingerprint, entry.Name, strings.Join(entry.Tags, "\x00"))
+			for _, page := range entry.Pages {
+				fingerprint = hashStrings(fingerprint, page.File.Path, page.File.Body)
+			}
+		}
+
+		viewCopy := view
+		files = append(files, generatedFile{
+			path:        path,
+			fingerprint: fingerprint,
+			render: func() ([]byte, error) {
+				return b.renderer.RenderTopic(viewCopy)
+			},
+		})
+	}
+
+	return files
+}
+
 func buildTopicView(topic domain.Topic) topicView {
+	return buildArchiveView(
+		topic.Name,
+		"",
+		filepath.ToSlash(filepath.Join("..", "..", "index.html")),
+		"",
+		"",
+		filepath.ToSlash(filepath.Join("..", "..", "style.css")),
+		filepath.ToSlash(filepath.Join("..", "..", "images", "favicon.png")),
+		topic.Entries,
+		collectTopicTags(topic),
+		"",
+		func(entry domain.Entry) string {
+			return filepath.ToSlash(filepath.Join(entry.Slug, "index.html"))
+		},
+		func(name string) string {
+			return filepath.ToSlash(filepath.Join("tags", slugifySegment(name), "index.html"))
+		},
+	)
+}
+
+func buildArchiveView(
+	name string,
+	description string,
+	home string,
+	parentName string,
+	parentURL string,
+	css string,
+	icon string,
+	entries []domain.Entry,
+	allTags []string,
+	currentTag string,
+	entryURL func(domain.Entry) string,
+	tagURL func(string) string,
+) topicView {
 	byYear := map[int][]topicEntryView{}
 	years := make([]int, 0)
 
-	for _, entry := range topic.Entries {
+	for _, entry := range entries {
 		if _, ok := byYear[entry.Year]; !ok {
 			years = append(years, entry.Year)
 		}
 
 		byYear[entry.Year] = append(byYear[entry.Year], topicEntryView{
 			Label: fmt.Sprintf("%02d %s", entry.Month, entry.Title),
-			URL:   filepath.ToSlash(filepath.Join(entry.Slug, "index.html")),
+			URL:   entryURL(entry),
 		})
 	}
 
@@ -304,13 +405,75 @@ func buildTopicView(topic domain.Topic) topicView {
 		})
 	}
 
-	return topicView{
-		Name:  topic.Name,
-		Years: yearViews,
-		Home:  filepath.ToSlash(filepath.Join("..", "..", "index.html")),
-		CSS:   filepath.ToSlash(filepath.Join("..", "..", "style.css")),
-		Icon:  filepath.ToSlash(filepath.Join("..", "..", "images", "favicon.png")),
+	tagViews := make([]topicTagView, 0, len(allTags))
+	for _, tag := range allTags {
+		tagViews = append(tagViews, topicTagView{
+			Name:    tag,
+			URL:     tagURL(tag),
+			Current: strings.EqualFold(tag, currentTag),
+		})
 	}
+
+	return topicView{
+		Name:        name,
+		Description: description,
+		Years:       yearViews,
+		Tags:        tagViews,
+		Home:        home,
+		ParentName:  parentName,
+		ParentURL:   parentURL,
+		CSS:         css,
+		Icon:        icon,
+	}
+}
+
+func collectTopicTags(topic domain.Topic) []string {
+	seen := map[string]string{}
+	for _, entry := range topic.Entries {
+		for _, tag := range entry.Tags {
+			key := strings.ToLower(tag)
+			if _, ok := seen[key]; ok {
+				continue
+			}
+			seen[key] = tag
+		}
+	}
+
+	tags := make([]string, 0, len(seen))
+	for _, tag := range seen {
+		tags = append(tags, tag)
+	}
+
+	slices.SortFunc(tags, func(left, right string) int {
+		return strings.Compare(strings.ToLower(left), strings.ToLower(right))
+	})
+
+	return tags
+}
+
+func slugifySegment(value string) string {
+	var builder strings.Builder
+	lastDash := false
+
+	for _, r := range strings.ToLower(strings.TrimSpace(value)) {
+		switch {
+		case unicode.IsLetter(r) || unicode.IsDigit(r):
+			builder.WriteRune(r)
+			lastDash = false
+		case unicode.IsSpace(r) || r == '-' || r == '_' || unicode.IsPunct(r) || unicode.IsSymbol(r):
+			if !lastDash && builder.Len() > 0 {
+				builder.WriteByte('-')
+				lastDash = true
+			}
+		}
+	}
+
+	slug := strings.Trim(builder.String(), "-")
+	if slug == "" {
+		return "tag"
+	}
+
+	return slug
 }
 
 func fileExists(path string) bool {

@@ -12,6 +12,7 @@ import (
 	"unicode"
 
 	"github.com/gomarkdown/markdown"
+	"gopkg.in/yaml.v2"
 
 	"github.com/nevenkitasuno/blog-ssg/internal/domain"
 )
@@ -20,6 +21,10 @@ var entryPattern = regexp.MustCompile(`^(\d{4})\s+(\d{2})\s+(.+)$`)
 
 type Loader struct {
 	contentDir string
+}
+
+type frontMatter struct {
+	Tags []string `yaml:"tags"`
 }
 
 func NewLoader(contentDir string) *Loader {
@@ -132,6 +137,7 @@ func (l *Loader) loadEntry(topicName, dirName string) (domain.Entry, bool, error
 		Year:  year,
 		Month: month,
 		Title: title,
+		Tags:  nil,
 		Pages: make([]domain.Page, 0, len(files)),
 	}
 
@@ -156,6 +162,13 @@ func (l *Loader) loadEntry(topicName, dirName string) (domain.Entry, bool, error
 	slices.SortFunc(entry.Pages, func(left, right domain.Page) int {
 		return left.Number - right.Number
 	})
+	if len(entry.Pages) > 0 && entry.Pages[0].Number == 1 {
+		tags, err := extractTagsFromFile(entry.Pages[0].File.Path)
+		if err != nil {
+			return domain.Entry{}, false, fmt.Errorf("parse tags in %q: %w", entry.Pages[0].File.Path, err)
+		}
+		entry.Tags = tags
+	}
 
 	return entry, true, nil
 }
@@ -176,7 +189,12 @@ func (l *Loader) loadPage(topicName, entryName, fileName string) (domain.Page, b
 		return domain.Page{}, false, fmt.Errorf("read markdown file %q: %w", path, err)
 	}
 
-	trimmed := strings.TrimSpace(string(body))
+	markdownBody, _, err := splitFrontMatter(string(body))
+	if err != nil {
+		return domain.Page{}, false, fmt.Errorf("parse front matter in %q: %w", path, err)
+	}
+
+	trimmed := strings.TrimSpace(markdownBody)
 	if trimmed == "" {
 		return domain.Page{}, false, nil
 	}
@@ -186,9 +204,68 @@ func (l *Loader) loadPage(topicName, entryName, fileName string) (domain.Page, b
 		File: domain.MarkdownFile{
 			Path: path,
 			Body: trimmed,
-			HTML: template.HTML(markdown.ToHTML(body, nil, nil)),
+			HTML: template.HTML(markdown.ToHTML([]byte(trimmed), nil, nil)),
 		},
 	}, true, nil
+}
+
+func extractTags(body string) ([]string, error) {
+	_, rawFrontMatter, err := splitFrontMatter(body)
+	if err != nil || rawFrontMatter == "" {
+		return nil, err
+	}
+
+	var meta frontMatter
+	if err := yaml.Unmarshal([]byte(rawFrontMatter), &meta); err != nil {
+		return nil, err
+	}
+
+	seen := map[string]struct{}{}
+	tags := make([]string, 0, len(meta.Tags))
+	for _, tag := range meta.Tags {
+		trimmed := strings.TrimSpace(tag)
+		if trimmed == "" {
+			continue
+		}
+		key := strings.ToLower(trimmed)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		tags = append(tags, trimmed)
+	}
+
+	slices.SortFunc(tags, func(left, right string) int {
+		return strings.Compare(strings.ToLower(left), strings.ToLower(right))
+	})
+
+	return tags, nil
+}
+
+func extractTagsFromFile(path string) ([]string, error) {
+	body, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return extractTags(string(body))
+}
+
+func splitFrontMatter(body string) (markdownBody string, rawFrontMatter string, err error) {
+	normalized := strings.ReplaceAll(body, "\r\n", "\n")
+	if !strings.HasPrefix(normalized, "---\n") {
+		return normalized, "", nil
+	}
+
+	rest := normalized[len("---\n"):]
+	end := strings.Index(rest, "\n---\n")
+	if end == -1 {
+		return "", "", fmt.Errorf("unterminated yaml front matter")
+	}
+
+	rawFrontMatter = rest[:end]
+	markdownBody = rest[end+len("\n---\n"):]
+	return markdownBody, rawFrontMatter, nil
 }
 
 func slugify(value string) string {

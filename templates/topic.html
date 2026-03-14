@@ -8,14 +8,22 @@
     <link rel="icon" href="{{.Icon}}" type="image/png">
 </head>
 <body>
-    <p><a href="{{.Home}}">Темы</a></p>
+    <p><a href="{{.Home}}">Темы</a>{{if .ParentURL}} / <a href="{{.ParentURL}}">{{.ParentName}}</a>{{end}}</p>
     <h1>{{.Name}}</h1>
+    {{if .Description}}<p>{{.Description}}</p>{{end}}
 
     <ul>
         {{range .Years}}
         <li><a href="#year-{{.Year}}">{{.Year}}</a></li>
         {{end}}
     </ul>
+    {{if .Tags}}
+    <ul>
+        {{range .Tags}}
+        <li>{{if .Current}}{{.Name}}{{else}}<a href="{{.URL}}">{{.Name}}</a>{{end}}</li>
+        {{end}}
+    </ul>
+    {{end}}
 
     {{range .Years}}
     <h2 id="year-{{.Year}}">{{.Year}}</h2>

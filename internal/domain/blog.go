@@ -18,6 +18,7 @@ type Entry struct {
 	Year  int
 	Month int
 	Title string
+	Tags  []string
 	Pages []Page
 }
 
