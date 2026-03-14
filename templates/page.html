@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{.EntryName}}</title>
+    <title>{{.EntryTitle}}</title>
     <link rel="stylesheet" href="{{.CSS}}">
     <link rel="icon" href="{{.Icon}}" type="image/png">
 </head>
 <body>
     <p><a href="{{.TopicURL}}">{{.TopicName}}</a></p>
-    <h1>{{.EntryName}}</h1>
+    <h1>{{.EntryTitle}}</h1>
     {{if .Tags}}
     <ul class="archive-nav archive-tags">
         {{range .Tags}}
@@ -22,6 +22,8 @@
         {{.ContentHTML}}
     </main>
 
+    {{if .NextURL}}
     <p><a href="{{.NextURL}}">{{.NextLabel}}</a></p>
+    {{end}}
 </body>
 </html>

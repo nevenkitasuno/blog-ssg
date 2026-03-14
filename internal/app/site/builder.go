@@ -103,6 +103,7 @@ type pageView struct {
 	TopicName   string
 	TopicURL    string
 	EntryName   string
+	EntryTitle  string
 	Tags        []pageTagView
 	PageNumber  int
 	ContentHTML template.HTML
@@ -259,6 +260,7 @@ func (b *Builder) planEntryFiles(topic domain.Topic, topicBaseDir string) []gene
 				TopicName:   topic.Name,
 				TopicURL:    relativePath(pagePath, filepath.Join(topicBaseDir, "index.html")),
 				EntryName:   entry.Name,
+				EntryTitle:  entry.Title,
 				Tags:        buildPageTags(pagePath, topicBaseDir, entry),
 				PageNumber:  page.Number,
 				ContentHTML: renderPageHTML(page.File.Body, pagePath, entryDir),
@@ -272,7 +274,7 @@ func (b *Builder) planEntryFiles(topic domain.Topic, topicBaseDir string) []gene
 				nextPath := filepath.Join(entryDir, fmt.Sprintf("%d", next.Number), "index.html")
 				view.NextLabel = "Далее"
 				view.NextURL = relativePath(pagePath, nextPath)
-			} else {
+			} else if len(entry.Pages) > 1 {
 				view.NextLabel = "В начало"
 				view.NextURL = relativePath(pagePath, filepath.Join(entryDir, "index.html"))
 			}
