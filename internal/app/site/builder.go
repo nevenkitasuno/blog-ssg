@@ -77,6 +77,11 @@ type topicTagView struct {
 	Current bool
 }
 
+type pageTagView struct {
+	Name string
+	URL  string
+}
+
 type topicView struct {
 	Name        string
 	Description string
@@ -93,6 +98,7 @@ type pageView struct {
 	TopicName   string
 	TopicURL    string
 	EntryName   string
+	Tags        []pageTagView
 	PageNumber  int
 	ContentHTML template.HTML
 	NextLabel   string
@@ -248,6 +254,7 @@ func (b *Builder) planEntryFiles(topic domain.Topic, topicBaseDir string) []gene
 				TopicName:   topic.Name,
 				TopicURL:    relativePath(pagePath, filepath.Join(topicBaseDir, "index.html")),
 				EntryName:   entry.Name,
+				Tags:        buildPageTags(pagePath, topicBaseDir, entry),
 				PageNumber:  page.Number,
 				ContentHTML: page.File.HTML,
 				HomeURL:     relativePath(pagePath, filepath.Join(b.outputDir, "index.html")),
@@ -314,6 +321,7 @@ func (b *Builder) planTagFiles(topic domain.Topic) []generatedFile {
 			tagEntries[tag],
 			tagNames,
 			tag,
+			filepath.ToSlash(filepath.Join("..", "..", "index.html")),
 			func(entry domain.Entry) string {
 				return filepath.ToSlash(filepath.Join("..", "..", entry.Slug, "index.html"))
 			},
@@ -356,6 +364,7 @@ func buildTopicView(topic domain.Topic) topicView {
 		topic.Entries,
 		collectTopicTags(topic),
 		"",
+		"",
 		func(entry domain.Entry) string {
 			return filepath.ToSlash(filepath.Join(entry.Slug, "index.html"))
 		},
@@ -376,6 +385,7 @@ func buildArchiveView(
 	entries []domain.Entry,
 	allTags []string,
 	currentTag string,
+	resetURL string,
 	entryURL func(domain.Entry) string,
 	tagURL func(string) string,
 ) topicView {
@@ -406,6 +416,12 @@ func buildArchiveView(
 	}
 
 	tagViews := make([]topicTagView, 0, len(allTags))
+	if currentTag != "" {
+		tagViews = append(tagViews, topicTagView{
+			Name: "Сброс",
+			URL:  resetURL,
+		})
+	}
 	for _, tag := range allTags {
 		tagViews = append(tagViews, topicTagView{
 			Name:    tag,
@@ -448,6 +464,18 @@ func collectTopicTags(topic domain.Topic) []string {
 		return strings.Compare(strings.ToLower(left), strings.ToLower(right))
 	})
 
+	return tags
+}
+
+func buildPageTags(pagePath, topicBaseDir string, entry domain.Entry) []pageTagView {
+	tags := make([]pageTagView, 0, len(entry.Tags))
+	for _, tag := range entry.Tags {
+		tagPath := filepath.Join(topicBaseDir, "tags", slugifySegment(tag), "index.html")
+		tags = append(tags, pageTagView{
+			Name: tag,
+			URL:  relativePath(pagePath, tagPath),
+		})
+	}
 	return tags
 }
 

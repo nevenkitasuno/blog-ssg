@@ -8,8 +8,15 @@
     <link rel="icon" href="{{.Icon}}" type="image/png">
 </head>
 <body>
-    <p><a href="{{.HomeURL}}">Темы</a> / <a href="{{.TopicURL}}">{{.TopicName}}</a></p>
+    <p><a href="{{.TopicURL}}">{{.TopicName}}</a></p>
     <h1>{{.EntryName}}</h1>
+    {{if .Tags}}
+    <ul class="archive-nav archive-tags">
+        {{range .Tags}}
+        <li><a href="{{.URL}}">{{.Name}}</a></li>
+        {{end}}
+    </ul>
+    {{end}}
 
     <main>
         {{.ContentHTML}}

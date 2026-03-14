@@ -8,19 +8,17 @@
     <link rel="icon" href="{{.Icon}}" type="image/png">
 </head>
 <body>
-    <p><a href="{{.Home}}">Темы</a>{{if .ParentURL}} / <a href="{{.ParentURL}}">{{.ParentName}}</a>{{end}}</p>
     <h1>{{.Name}}</h1>
-    {{if .Description}}<p>{{.Description}}</p>{{end}}
 
-    <ul>
+    <ul class="archive-nav archive-years">
         {{range .Years}}
         <li><a href="#year-{{.Year}}">{{.Year}}</a></li>
         {{end}}
     </ul>
     {{if .Tags}}
-    <ul>
+    <ul class="archive-nav archive-tags">
         {{range .Tags}}
-        <li>{{if .Current}}{{.Name}}{{else}}<a href="{{.URL}}">{{.Name}}</a>{{end}}</li>
+        <li>{{if .Current}}{{.Name}}{{else if .URL}}<a href="{{.URL}}">{{.Name}}</a>{{else}}{{.Name}}{{end}}</li>
         {{end}}
     </ul>
     {{end}}
