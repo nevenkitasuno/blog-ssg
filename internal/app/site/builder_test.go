@@ -40,3 +40,35 @@ func TestRenderTopicPreviewHTML(t *testing.T) {
 		t.Fatalf("renderTopicPreviewHTML() = %q, want %q", got, want)
 	}
 }
+
+func TestResolveTopicLink(t *testing.T) {
+	tests := []struct {
+		name string
+		link domain.TopicLink
+		want string
+	}{
+		{
+			name: "external",
+			link: domain.TopicLink{Label: "Repo", Target: "https://example.com", External: true},
+			want: "https://example.com",
+		},
+		{
+			name: "entry first page",
+			link: domain.TopicLink{Label: "Entry", Target: "2025 12 11 Entry with date/1.md"},
+			want: "2025-12-11-entry-with-date/index.html",
+		},
+		{
+			name: "entry later page",
+			link: domain.TopicLink{Label: "Page", Target: "2026 03 Коты/2.md"},
+			want: "2026-03-коты/2/index.html",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := resolveTopicLink(tt.link); got != tt.want {
+				t.Fatalf("resolveTopicLink() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}

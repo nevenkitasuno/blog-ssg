@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -83,6 +84,11 @@ type topicTagView struct {
 	Current bool
 }
 
+type topicLinkView struct {
+	Name string
+	URL  string
+}
+
 type pageTagView struct {
 	Name string
 	URL  string
@@ -91,6 +97,7 @@ type pageTagView struct {
 type topicView struct {
 	Name        string
 	Description string
+	Links       []topicLinkView
 	Years       []topicYearView
 	Tags        []topicTagView
 	Home        string
@@ -202,6 +209,9 @@ func (b *Builder) plan(blog domain.Blog) ([]generatedFile, error) {
 		topicData := buildTopicView(topic)
 		topicPath := filepath.Join(b.outputDir, "topics", topic.Slug, "index.html")
 		topicFingerprint := hashStrings(templateDigest, topic.Name)
+		for _, link := range topic.Links {
+			topicFingerprint = hashStrings(topicFingerprint, link.Label, link.Target, fmt.Sprintf("%t", link.External))
+		}
 		for _, entry := range topic.Entries {
 			topicFingerprint = hashStrings(topicFingerprint, entry.Name, strings.Join(entry.Tags, "\x00"))
 			for _, page := range entry.Pages {
@@ -344,12 +354,19 @@ func (b *Builder) planTagFiles(topic domain.Topic) []generatedFile {
 			filepath.ToSlash(filepath.Join("..", "..", "index.html")),
 			filepath.ToSlash(filepath.Join("..", "..", "..", "..", "style.css")),
 			filepath.ToSlash(filepath.Join("..", "..", "..", "..", "images", "favicon.png")),
+			topic.Links,
 			tagEntries[tag],
 			tagNames,
 			tag,
 			filepath.ToSlash(filepath.Join("..", "..", "index.html")),
 			func(entry domain.Entry) string {
 				return filepath.ToSlash(filepath.Join("..", "..", entry.Slug, "index.html"))
+			},
+			func(link domain.TopicLink) string {
+				if link.External {
+					return link.Target
+				}
+				return filepath.ToSlash(filepath.Join("..", "..", resolveTopicLink(link)))
 			},
 			func(name string) string {
 				return filepath.ToSlash(filepath.Join("..", slugifySegment(name), "index.html"))
@@ -358,6 +375,9 @@ func (b *Builder) planTagFiles(topic domain.Topic) []generatedFile {
 
 		path := filepath.Join(b.outputDir, "topics", topic.Slug, "tags", slugifySegment(tag), "index.html")
 		fingerprint := hashStrings(b.renderer.Digest(), topic.Name, tag)
+		for _, link := range topic.Links {
+			fingerprint = hashStrings(fingerprint, link.Label, link.Target, fmt.Sprintf("%t", link.External))
+		}
 		for _, entry := range tagEntries[tag] {
 			fingerprint = hashStrings(fingerprint, entry.Name, strings.Join(entry.Tags, "\x00"))
 			for _, page := range entry.Pages {
@@ -387,12 +407,16 @@ func buildTopicView(topic domain.Topic) topicView {
 		"",
 		filepath.ToSlash(filepath.Join("..", "..", "style.css")),
 		filepath.ToSlash(filepath.Join("..", "..", "images", "favicon.png")),
+		topic.Links,
 		topic.Entries,
 		collectTopicTags(topic),
 		"",
 		"",
 		func(entry domain.Entry) string {
 			return filepath.ToSlash(filepath.Join(entry.Slug, "index.html"))
+		},
+		func(link domain.TopicLink) string {
+			return resolveTopicLink(link)
 		},
 		func(name string) string {
 			return filepath.ToSlash(filepath.Join("tags", slugifySegment(name), "index.html"))
@@ -408,11 +432,13 @@ func buildArchiveView(
 	parentURL string,
 	css string,
 	icon string,
+	links []domain.TopicLink,
 	entries []domain.Entry,
 	allTags []string,
 	currentTag string,
 	resetURL string,
 	entryURL func(domain.Entry) string,
+	linkURL func(domain.TopicLink) string,
 	tagURL func(string) string,
 ) topicView {
 	byYear := map[int][]topicEntryView{}
@@ -457,9 +483,18 @@ func buildArchiveView(
 		})
 	}
 
+	linkViews := make([]topicLinkView, 0, len(links))
+	for _, link := range links {
+		linkViews = append(linkViews, topicLinkView{
+			Name: link.Label,
+			URL:  linkURL(link),
+		})
+	}
+
 	return topicView{
 		Name:        name,
 		Description: description,
+		Links:       linkViews,
 		Years:       yearViews,
 		Tags:        tagViews,
 		Home:        home,
@@ -468,6 +503,35 @@ func buildArchiveView(
 		CSS:         css,
 		Icon:        icon,
 	}
+}
+
+func resolveTopicLink(link domain.TopicLink) string {
+	if link.External {
+		return link.Target
+	}
+
+	target := filepath.ToSlash(strings.TrimSpace(link.Target))
+	if target == "" {
+		return ""
+	}
+
+	target = strings.TrimPrefix(target, "./")
+	target = strings.TrimPrefix(target, "/")
+
+	if strings.HasSuffix(strings.ToLower(target), ".md") {
+		dir := filepath.Dir(target)
+		name := strings.TrimSuffix(filepath.Base(target), filepath.Ext(target))
+		if number, err := strconv.Atoi(name); err == nil {
+			if number <= 1 {
+				return filepath.ToSlash(filepath.Join(slugifySegment(dir), "index.html"))
+			}
+			return filepath.ToSlash(filepath.Join(slugifySegment(dir), fmt.Sprintf("%d", number), "index.html"))
+		}
+
+		target = dir
+	}
+
+	return filepath.ToSlash(filepath.Join(slugifySegment(target), "index.html"))
 }
 
 func entryLabel(entry domain.Entry) string {

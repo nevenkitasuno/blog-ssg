@@ -7,7 +7,14 @@ type Blog struct {
 type Topic struct {
 	Name    string
 	Slug    string
+	Links   []TopicLink
 	Entries []Entry
+}
+
+type TopicLink struct {
+	Label    string
+	Target   string
+	External bool
 }
 
 type Entry struct {

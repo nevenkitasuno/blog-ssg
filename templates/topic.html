@@ -10,6 +10,14 @@
 <body>
     <h1>{{.Name}}</h1>
 
+    {{if .Links}}
+    <ul class="archive-nav archive-links">
+        {{range .Links}}
+        <li><a href="{{.URL}}">{{.Name}}</a></li>
+        {{end}}
+    </ul>
+    {{end}}
+
     <ul class="archive-nav archive-years">
         {{range .Years}}
         <li><a href="#year-{{.Year}}">{{.Year}}</a></li>

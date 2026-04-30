@@ -98,6 +98,36 @@ func TestLoaderRejectsInvalidDayInEntryDirectory(t *testing.T) {
 	}
 }
 
+func TestLoaderExtractsTopicLinks(t *testing.T) {
+	root := t.TempDir()
+	topicDir := filepath.Join(root, "Gallery")
+	if err := os.MkdirAll(filepath.Join(topicDir, "meta"), 0o755); err != nil {
+		t.Fatalf("mkdir meta: %v", err)
+	}
+
+	writeEntryPage(t, filepath.Join(topicDir, "2025 12 11 Entry with date", "1.md"), "Preview")
+	if err := os.WriteFile(filepath.Join(topicDir, "meta", "Links.md"), []byte(`- [[2025 12 11 Entry with date/1.md|Internal]]
+- [External](https://example.com)`), 0o644); err != nil {
+		t.Fatalf("write links: %v", err)
+	}
+
+	blog, err := NewLoader(root).Load()
+	if err != nil {
+		t.Fatalf("load blog: %v", err)
+	}
+
+	links := blog.Topics[0].Links
+	if len(links) != 2 {
+		t.Fatalf("links = %d, want 2", len(links))
+	}
+	if links[0].Label != "Internal" || links[0].Target != "2025 12 11 Entry with date/1.md" || links[0].External {
+		t.Fatalf("first link = %+v", links[0])
+	}
+	if links[1].Label != "External" || links[1].Target != "https://example.com" || !links[1].External {
+		t.Fatalf("second link = %+v", links[1])
+	}
+}
+
 func writeEntryPage(t *testing.T, path, body string) {
 	t.Helper()
 

@@ -16,8 +16,10 @@ import (
 )
 
 var (
-	entryPattern       = regexp.MustCompile(`^(\d{4})\s+(\d{2})(?:\s+(\d{2}))?\s+(.+)$`)
-	orderedListPattern = regexp.MustCompile(`^\d+\.\s+`)
+	entryPattern        = regexp.MustCompile(`^(\d{4})\s+(\d{2})(?:\s+(\d{2}))?\s+(.+)$`)
+	orderedListPattern  = regexp.MustCompile(`^\d+\.\s+`)
+	wikiLinkPattern     = regexp.MustCompile(`\[\[([^|\]]+)\|([^\]]+)\]\]`)
+	markdownLinkPattern = regexp.MustCompile(`\[([^\]]+)\]\(([^)]+)\)`)
 )
 
 type Loader struct {
@@ -69,8 +71,15 @@ func (l *Loader) loadTopic(name string) (domain.Topic, bool, error) {
 	topic := domain.Topic{
 		Name:    name,
 		Slug:    slugify(name),
+		Links:   nil,
 		Entries: make([]domain.Entry, 0, len(entries)),
 	}
+
+	links, err := l.loadTopicLinks(name)
+	if err != nil {
+		return domain.Topic{}, false, err
+	}
+	topic.Links = links
 
 	for _, entryDir := range entries {
 		if !entryDir.IsDir() {
@@ -280,6 +289,62 @@ func extractTagsFromFile(path string) ([]string, error) {
 	return extractTags(string(body))
 }
 
+func (l *Loader) loadTopicLinks(topicName string) ([]domain.TopicLink, error) {
+	path := filepath.Join(l.contentDir, topicName, "meta", "Links.md")
+	body, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("read topic links %q: %w", path, err)
+	}
+
+	return extractTopicLinks(string(body)), nil
+}
+
+func extractTopicLinks(body string) []domain.TopicLink {
+	lines := strings.Split(strings.ReplaceAll(body, "\r\n", "\n"), "\n")
+	links := make([]domain.TopicLink, 0)
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		trimmed = strings.TrimPrefix(trimmed, "- ")
+		trimmed = strings.TrimPrefix(trimmed, "* ")
+		trimmed = strings.TrimSpace(trimmed)
+		if trimmed == "" {
+			continue
+		}
+
+		if matches := wikiLinkPattern.FindStringSubmatch(trimmed); matches != nil {
+			target := strings.TrimSpace(matches[1])
+			label := strings.TrimSpace(matches[2])
+			if target == "" || label == "" {
+				continue
+			}
+			links = append(links, domain.TopicLink{
+				Label:  label,
+				Target: target,
+			})
+			continue
+		}
+
+		if matches := markdownLinkPattern.FindStringSubmatch(trimmed); matches != nil {
+			label := strings.TrimSpace(matches[1])
+			target := strings.TrimSpace(matches[2])
+			if target == "" || label == "" {
+				continue
+			}
+			links = append(links, domain.TopicLink{
+				Label:    label,
+				Target:   target,
+				External: isExternalURL(target),
+			})
+		}
+	}
+
+	return links
+}
+
 func splitFrontMatter(body string) (markdownBody string, rawFrontMatter string, err error) {
 	normalized := strings.ReplaceAll(body, "\r\n", "\n")
 	if !strings.HasPrefix(normalized, "---\n") {
@@ -295,6 +360,11 @@ func splitFrontMatter(body string) (markdownBody string, rawFrontMatter string, 
 	rawFrontMatter = rest[:end]
 	markdownBody = rest[end+len("\n---\n"):]
 	return markdownBody, rawFrontMatter, nil
+}
+
+func isExternalURL(value string) bool {
+	lower := strings.ToLower(value)
+	return strings.HasPrefix(lower, "http://") || strings.HasPrefix(lower, "https://")
 }
 
 func firstParagraphFromMarkdown(body string) string {
