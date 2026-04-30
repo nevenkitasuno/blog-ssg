@@ -13,9 +13,9 @@ func TestLoaderSupportsOptionalDayInEntryDirectory(t *testing.T) {
 		t.Fatalf("mkdir topic: %v", err)
 	}
 
-	writeEntryPage(t, filepath.Join(topicDir, "2026 04 Post without day", "1.md"), "# one")
-	writeEntryPage(t, filepath.Join(topicDir, "2026 04 09 Post with day", "1.md"), "# two")
-	writeEntryPage(t, filepath.Join(topicDir, "2026 04 21 Later dated post", "1.md"), "# three")
+	writeEntryPage(t, filepath.Join(topicDir, "2026 04 Post without day", "1.md"), "First preview")
+	writeEntryPage(t, filepath.Join(topicDir, "2026 04 09 Post with day", "1.md"), "Second preview")
+	writeEntryPage(t, filepath.Join(topicDir, "2026 04 21 Later dated post", "1.md"), "Third preview")
 
 	blog, err := NewLoader(root).Load()
 	if err != nil {
@@ -39,6 +39,43 @@ func TestLoaderSupportsOptionalDayInEntryDirectory(t *testing.T) {
 	}
 	if entries[2].Day != 0 || entries[2].Title != "Post without day" {
 		t.Fatalf("third entry = %+v, want no day", entries[2])
+	}
+}
+
+func TestLoaderExtractsPreviewFromFirstParagraph(t *testing.T) {
+	root := t.TempDir()
+	topicDir := filepath.Join(root, "Gallery")
+	if err := os.MkdirAll(topicDir, 0o755); err != nil {
+		t.Fatalf("mkdir topic: %v", err)
+	}
+
+	writeEntryPage(t, filepath.Join(topicDir, "2025 12 11 Entry with date", "1.md"), `---
+tags:
+  - photos
+---
+
+# Heading
+
+First paragraph for preview
+continues here.
+
+- list item
+
+Second paragraph`)
+
+	blog, err := NewLoader(root).Load()
+	if err != nil {
+		t.Fatalf("load blog: %v", err)
+	}
+
+	if len(blog.Topics) != 1 || len(blog.Topics[0].Entries) != 1 {
+		t.Fatalf("unexpected blog shape: %+v", blog)
+	}
+
+	got := blog.Topics[0].Entries[0].Preview
+	want := "First paragraph for preview continues here."
+	if got != want {
+		t.Fatalf("preview = %q, want %q", got, want)
 	}
 }
 

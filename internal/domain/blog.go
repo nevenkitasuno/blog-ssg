@@ -11,15 +11,16 @@ type Topic struct {
 }
 
 type Entry struct {
-	Name   string
-	Slug   string
-	Year   int
-	Month  int
-	Day    int
-	Title  string
-	Tags   []string
-	Assets []Asset
-	Pages  []Page
+	Name    string
+	Slug    string
+	Year    int
+	Month   int
+	Day     int
+	Title   string
+	Preview string
+	Tags    []string
+	Assets  []Asset
+	Pages   []Page
 }
 
 type Asset struct {

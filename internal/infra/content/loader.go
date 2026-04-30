@@ -15,7 +15,10 @@ import (
 	"github.com/nevenkitasuno/blog-ssg/internal/domain"
 )
 
-var entryPattern = regexp.MustCompile(`^(\d{4})\s+(\d{2})(?:\s+(\d{2}))?\s+(.+)$`)
+var (
+	entryPattern       = regexp.MustCompile(`^(\d{4})\s+(\d{2})(?:\s+(\d{2}))?\s+(.+)$`)
+	orderedListPattern = regexp.MustCompile(`^\d+\.\s+`)
+)
 
 type Loader struct {
 	contentDir string
@@ -144,15 +147,16 @@ func (l *Loader) loadEntry(topicName, dirName string) (domain.Entry, bool, error
 	}
 
 	entry := domain.Entry{
-		Name:   dirName,
-		Slug:   slugify(dirName),
-		Year:   year,
-		Month:  month,
-		Day:    day,
-		Title:  title,
-		Tags:   nil,
-		Assets: make([]domain.Asset, 0),
-		Pages:  make([]domain.Page, 0, len(files)),
+		Name:    dirName,
+		Slug:    slugify(dirName),
+		Year:    year,
+		Month:   month,
+		Day:     day,
+		Title:   title,
+		Preview: "",
+		Tags:    nil,
+		Assets:  make([]domain.Asset, 0),
+		Pages:   make([]domain.Page, 0, len(files)),
 	}
 
 	for _, file := range files {
@@ -193,6 +197,7 @@ func (l *Loader) loadEntry(topicName, dirName string) (domain.Entry, bool, error
 			return domain.Entry{}, false, fmt.Errorf("parse tags in %q: %w", entry.Pages[0].File.Path, err)
 		}
 		entry.Tags = tags
+		entry.Preview = firstParagraphFromMarkdown(entry.Pages[0].File.Body)
 	}
 
 	return entry, true, nil
@@ -290,6 +295,67 @@ func splitFrontMatter(body string) (markdownBody string, rawFrontMatter string, 
 	rawFrontMatter = rest[:end]
 	markdownBody = rest[end+len("\n---\n"):]
 	return markdownBody, rawFrontMatter, nil
+}
+
+func firstParagraphFromMarkdown(body string) string {
+	normalized := strings.ReplaceAll(body, "\r\n", "\n")
+	lines := strings.Split(normalized, "\n")
+	block := make([]string, 0)
+
+	flush := func() string {
+		if len(block) == 0 {
+			return ""
+		}
+
+		if !isParagraphBlock(block) {
+			block = block[:0]
+			return ""
+		}
+
+		paragraph := strings.Join(block, " ")
+		block = block[:0]
+		return strings.TrimSpace(paragraph)
+	}
+
+	for _, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			if paragraph := flush(); paragraph != "" {
+				return paragraph
+			}
+			continue
+		}
+
+		block = append(block, strings.TrimSpace(line))
+	}
+
+	return flush()
+}
+
+func isParagraphBlock(lines []string) bool {
+	if len(lines) == 0 {
+		return false
+	}
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" {
+			continue
+		}
+
+		if strings.HasPrefix(trimmed, "#") ||
+			strings.HasPrefix(trimmed, ">") ||
+			strings.HasPrefix(trimmed, "```") ||
+			strings.HasPrefix(trimmed, "~~~") ||
+			strings.HasPrefix(trimmed, "- ") ||
+			strings.HasPrefix(trimmed, "* ") ||
+			strings.HasPrefix(trimmed, "+ ") ||
+			orderedListPattern.MatchString(trimmed) ||
+			strings.HasPrefix(trimmed, "![") {
+			return false
+		}
+	}
+
+	return true
 }
 
 func slugify(value string) string {

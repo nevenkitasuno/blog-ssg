@@ -72,8 +72,9 @@ type topicYearView struct {
 }
 
 type topicEntryView struct {
-	Label string
-	URL   string
+	Label       string
+	URL         string
+	PreviewHTML template.HTML
 }
 
 type topicTagView struct {
@@ -423,8 +424,9 @@ func buildArchiveView(
 		}
 
 		byYear[entry.Year] = append(byYear[entry.Year], topicEntryView{
-			Label: entryLabel(entry),
-			URL:   entryURL(entry),
+			Label:       entryLabel(entry),
+			URL:         entryURL(entry),
+			PreviewHTML: renderTopicPreviewHTML(entry.Preview),
 		})
 	}
 
@@ -474,6 +476,14 @@ func entryLabel(entry domain.Entry) string {
 	}
 
 	return fmt.Sprintf("%02d %s", entry.Month, entry.Title)
+}
+
+func renderTopicPreviewHTML(preview string) template.HTML {
+	if strings.TrimSpace(preview) == "" {
+		return ""
+	}
+
+	return template.HTML(markdown.ToHTML([]byte(preview), nil, nil))
 }
 
 func collectTopicTags(topic domain.Topic) []string {

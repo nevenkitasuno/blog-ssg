@@ -27,7 +27,12 @@
     <h2 id="year-{{.Year}}">{{.Year}}</h2>
     <ul>
         {{range .Entries}}
-        <li><a href="{{.URL}}">{{.Label}}</a></li>
+        <li>
+            <a href="{{.URL}}">{{.Label}}</a>
+            {{if .PreviewHTML}}
+            <div>{{.PreviewHTML}}</div>
+            {{end}}
+        </li>
         {{end}}
     </ul>
     {{end}}

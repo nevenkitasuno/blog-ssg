@@ -32,3 +32,11 @@ func TestEntryLabel(t *testing.T) {
 		})
 	}
 }
+
+func TestRenderTopicPreviewHTML(t *testing.T) {
+	got := string(renderTopicPreviewHTML("Preview with **bold** text"))
+	want := "<p>Preview with <strong>bold</strong> text</p>\n"
+	if got != want {
+		t.Fatalf("renderTopicPreviewHTML() = %q, want %q", got, want)
+	}
+}
