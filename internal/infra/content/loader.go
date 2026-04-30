@@ -15,7 +15,7 @@ import (
 	"github.com/nevenkitasuno/blog-ssg/internal/domain"
 )
 
-var entryPattern = regexp.MustCompile(`^(\d{4})\s+(\d{2})\s+(.+)$`)
+var entryPattern = regexp.MustCompile(`^(\d{4})\s+(\d{2})(?:\s+(\d{2}))?\s+(.+)$`)
 
 type Loader struct {
 	contentDir string
@@ -94,6 +94,9 @@ func (l *Loader) loadTopic(name string) (domain.Topic, bool, error) {
 		if left.Month != right.Month {
 			return right.Month - left.Month
 		}
+		if left.Day != right.Day {
+			return right.Day - left.Day
+		}
 		return strings.Compare(left.Title, right.Title)
 	})
 
@@ -119,7 +122,18 @@ func (l *Loader) loadEntry(topicName, dirName string) (domain.Entry, bool, error
 		return domain.Entry{}, false, nil
 	}
 
-	title := strings.TrimSpace(matches[3])
+	day := 0
+	if matches[3] != "" {
+		day, err = strconv.Atoi(matches[3])
+		if err != nil {
+			return domain.Entry{}, false, fmt.Errorf("parse day in %q: %w", dirName, err)
+		}
+		if day < 1 || day > 31 {
+			return domain.Entry{}, false, nil
+		}
+	}
+
+	title := strings.TrimSpace(matches[4])
 	if title == "" {
 		return domain.Entry{}, false, nil
 	}
@@ -134,6 +148,7 @@ func (l *Loader) loadEntry(topicName, dirName string) (domain.Entry, bool, error
 		Slug:   slugify(dirName),
 		Year:   year,
 		Month:  month,
+		Day:    day,
 		Title:  title,
 		Tags:   nil,
 		Assets: make([]domain.Asset, 0),

@@ -15,6 +15,7 @@ type Entry struct {
 	Slug   string
 	Year   int
 	Month  int
+	Day    int
 	Title  string
 	Tags   []string
 	Assets []Asset

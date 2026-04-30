@@ -423,7 +423,7 @@ func buildArchiveView(
 		}
 
 		byYear[entry.Year] = append(byYear[entry.Year], topicEntryView{
-			Label: fmt.Sprintf("%02d %s", entry.Month, entry.Title),
+			Label: entryLabel(entry),
 			URL:   entryURL(entry),
 		})
 	}
@@ -466,6 +466,14 @@ func buildArchiveView(
 		CSS:         css,
 		Icon:        icon,
 	}
+}
+
+func entryLabel(entry domain.Entry) string {
+	if entry.Day > 0 {
+		return fmt.Sprintf("%02d %02d %s", entry.Month, entry.Day, entry.Title)
+	}
+
+	return fmt.Sprintf("%02d %s", entry.Month, entry.Title)
 }
 
 func collectTopicTags(topic domain.Topic) []string {
