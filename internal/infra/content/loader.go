@@ -20,6 +20,7 @@ var (
 	orderedListPattern  = regexp.MustCompile(`^\d+\.\s+`)
 	wikiLinkPattern     = regexp.MustCompile(`\[\[([^|\]]+)\|([^\]]+)\]\]`)
 	markdownLinkPattern = regexp.MustCompile(`\[([^\]]+)\]\(([^)]+)\)`)
+	colorValuePattern   = regexp.MustCompile(`^(#[0-9a-fA-F]{3,8}|(?:rgb|hsl)a?\([0-9a-zA-Z%.,\s/-]+\)|[a-zA-Z-]+)$`)
 )
 
 type Loader struct {
@@ -28,6 +29,17 @@ type Loader struct {
 
 type frontMatter struct {
 	Tags []string `yaml:"tags"`
+}
+
+type topicThemeFile struct {
+	Background string `yaml:"background"`
+	Accent     string `yaml:"accent"`
+	Heading    string `yaml:"heading"`
+	Muted      string `yaml:"muted"`
+	Surface    string `yaml:"surface"`
+	Border     string `yaml:"border"`
+	CodeBG     string `yaml:"code_bg"`
+	CodeBorder string `yaml:"code_border"`
 }
 
 func NewLoader(contentDir string) *Loader {
@@ -72,6 +84,7 @@ func (l *Loader) loadTopic(name string) (domain.Topic, bool, error) {
 		Name:    name,
 		Slug:    slugify(name),
 		Links:   nil,
+		Theme:   domain.TopicTheme{},
 		Meta:    nil,
 		Assets:  nil,
 		Entries: make([]domain.Entry, 0, len(entries)),
@@ -82,6 +95,12 @@ func (l *Loader) loadTopic(name string) (domain.Topic, bool, error) {
 		return domain.Topic{}, false, err
 	}
 	topic.Links = links
+
+	theme, err := l.loadTopicTheme(name)
+	if err != nil {
+		return domain.Topic{}, false, err
+	}
+	topic.Theme = theme
 
 	metaPages, metaAssets, err := l.loadTopicMeta(name)
 	if err != nil {
@@ -329,7 +348,7 @@ func (l *Loader) loadTopicMeta(topicName string) ([]domain.TopicMetaPage, []doma
 		}
 
 		path := filepath.Join(metaDir, file.Name())
-		if strings.EqualFold(file.Name(), "Links.md") {
+		if strings.EqualFold(file.Name(), "Links.md") || isTopicThemeFile(file.Name()) {
 			continue
 		}
 
@@ -378,6 +397,28 @@ func (l *Loader) loadTopicMeta(topicName string) ([]domain.TopicMetaPage, []doma
 	return pages, assets, nil
 }
 
+func (l *Loader) loadTopicTheme(topicName string) (domain.TopicTheme, error) {
+	for _, fileName := range []string{"Theme.yaml", "Theme.yml", "theme.yaml", "theme.yml"} {
+		path := filepath.Join(l.contentDir, topicName, "meta", fileName)
+		body, err := os.ReadFile(path)
+		if err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			return domain.TopicTheme{}, fmt.Errorf("read topic theme %q: %w", path, err)
+		}
+
+		var raw topicThemeFile
+		if err := yaml.Unmarshal(body, &raw); err != nil {
+			return domain.TopicTheme{}, fmt.Errorf("parse topic theme %q: %w", path, err)
+		}
+
+		return normalizeTopicTheme(raw), nil
+	}
+
+	return domain.TopicTheme{}, nil
+}
+
 func extractTopicLinks(body string) []domain.TopicLink {
 	lines := strings.Split(strings.ReplaceAll(body, "\r\n", "\n"), "\n")
 	links := make([]domain.TopicLink, 0)
@@ -421,6 +462,30 @@ func extractTopicLinks(body string) []domain.TopicLink {
 	return links
 }
 
+func normalizeTopicTheme(raw topicThemeFile) domain.TopicTheme {
+	return domain.TopicTheme{
+		Background: normalizeColorValue(raw.Background),
+		Accent:     normalizeColorValue(raw.Accent),
+		Heading:    normalizeColorValue(raw.Heading),
+		Muted:      normalizeColorValue(raw.Muted),
+		Surface:    normalizeColorValue(raw.Surface),
+		Border:     normalizeColorValue(raw.Border),
+		CodeBG:     normalizeColorValue(raw.CodeBG),
+		CodeBorder: normalizeColorValue(raw.CodeBorder),
+	}
+}
+
+func normalizeColorValue(value string) string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return ""
+	}
+	if !colorValuePattern.MatchString(trimmed) {
+		return ""
+	}
+	return trimmed
+}
+
 func splitFrontMatter(body string) (markdownBody string, rawFrontMatter string, err error) {
 	normalized := strings.ReplaceAll(body, "\r\n", "\n")
 	if !strings.HasPrefix(normalized, "---\n") {
@@ -441,6 +506,15 @@ func splitFrontMatter(body string) (markdownBody string, rawFrontMatter string, 
 func isExternalURL(value string) bool {
 	lower := strings.ToLower(value)
 	return strings.HasPrefix(lower, "http://") || strings.HasPrefix(lower, "https://")
+}
+
+func isTopicThemeFile(name string) bool {
+	switch strings.ToLower(name) {
+	case "theme.yaml", "theme.yml":
+		return true
+	default:
+		return false
+	}
 }
 
 func firstParagraphFromMarkdown(body string) string {

@@ -98,6 +98,7 @@ type topicView struct {
 	Name        string
 	Description string
 	BannerURL   string
+	ThemeCSS    template.CSS
 	Links       []topicLinkView
 	Years       []topicYearView
 	Tags        []topicTagView
@@ -113,6 +114,7 @@ type pageView struct {
 	TopicURL    string
 	EntryName   string
 	EntryTitle  string
+	ThemeCSS    template.CSS
 	Tags        []pageTagView
 	PageNumber  int
 	ContentHTML template.HTML
@@ -209,7 +211,7 @@ func (b *Builder) plan(blog domain.Blog) ([]generatedFile, error) {
 
 		topicData := buildTopicView(topic)
 		topicPath := filepath.Join(b.outputDir, "topics", topic.Slug, "index.html")
-		topicFingerprint := hashStrings(templateDigest, topic.Name)
+		topicFingerprint := hashStrings(templateDigest, topic.Name, topicThemeFingerprint(topic.Theme))
 		for _, link := range topic.Links {
 			topicFingerprint = hashStrings(topicFingerprint, link.Label, link.Target, fmt.Sprintf("%t", link.External))
 		}
@@ -284,6 +286,7 @@ func (b *Builder) planEntryFiles(topic domain.Topic, topicBaseDir string) []gene
 				TopicURL:    relativePath(pagePath, filepath.Join(topicBaseDir, "index.html")),
 				EntryName:   entry.Name,
 				EntryTitle:  entry.Title,
+				ThemeCSS:    renderTopicThemeCSS(topic.Theme),
 				Tags:        buildPageTags(pagePath, topicBaseDir, entry),
 				PageNumber:  page.Number,
 				ContentHTML: renderPageHTML(page.File.Body, pagePath, entryDir),
@@ -307,6 +310,7 @@ func (b *Builder) planEntryFiles(topic domain.Topic, topicBaseDir string) []gene
 				b.renderer.Digest(),
 				"page-render-v2",
 				topic.Name,
+				topicThemeFingerprint(topic.Theme),
 				entry.Name,
 				fmt.Sprintf("%d", page.Number),
 				page.File.Path,
@@ -369,6 +373,7 @@ func (b *Builder) planTagFiles(topic domain.Topic) []generatedFile {
 			topicBannerURL(topic, func(name string) string {
 				return filepath.ToSlash(filepath.Join("..", "..", "meta", name))
 			}),
+			topic.Theme,
 			topic.Links,
 			tagEntries[tag],
 			tagNames,
@@ -389,7 +394,7 @@ func (b *Builder) planTagFiles(topic domain.Topic) []generatedFile {
 		)
 
 		path := filepath.Join(b.outputDir, "topics", topic.Slug, "tags", slugifySegment(tag), "index.html")
-		fingerprint := hashStrings(b.renderer.Digest(), topic.Name, tag)
+		fingerprint := hashStrings(b.renderer.Digest(), topic.Name, tag, topicThemeFingerprint(topic.Theme))
 		for _, link := range topic.Links {
 			fingerprint = hashStrings(fingerprint, link.Label, link.Target, fmt.Sprintf("%t", link.External))
 		}
@@ -426,6 +431,7 @@ func (b *Builder) planTopicMetaFiles(topic domain.Topic, topicBaseDir string) []
 			TopicName:   topic.Name,
 			TopicURL:    relativePath(pagePath, filepath.Join(topicBaseDir, "index.html")),
 			EntryTitle:  metaPage.Title,
+			ThemeCSS:    renderTopicThemeCSS(topic.Theme),
 			ContentHTML: renderPageHTML(metaPage.File.Body, pagePath, metaOutputDir),
 			HomeURL:     relativePath(pagePath, filepath.Join(b.outputDir, "index.html")),
 			CSS:         relativePath(pagePath, filepath.Join(b.outputDir, "style.css")),
@@ -435,7 +441,7 @@ func (b *Builder) planTopicMetaFiles(topic domain.Topic, topicBaseDir string) []
 		viewCopy := view
 		files = append(files, generatedFile{
 			path:        pagePath,
-			fingerprint: hashStrings(b.renderer.Digest(), topic.Name, metaPage.Name, metaPage.File.Path, metaPage.File.Body),
+			fingerprint: hashStrings(b.renderer.Digest(), topic.Name, topicThemeFingerprint(topic.Theme), metaPage.Name, metaPage.File.Path, metaPage.File.Body),
 			render: func() ([]byte, error) {
 				return b.renderer.RenderPage(viewCopy)
 			},
@@ -474,6 +480,7 @@ func buildTopicView(topic domain.Topic) topicView {
 		topicBannerURL(topic, func(name string) string {
 			return filepath.ToSlash(filepath.Join("meta", name))
 		}),
+		topic.Theme,
 		topic.Links,
 		topic.Entries,
 		collectTopicTags(topic),
@@ -500,6 +507,7 @@ func buildArchiveView(
 	css string,
 	icon string,
 	bannerURL string,
+	theme domain.TopicTheme,
 	links []domain.TopicLink,
 	entries []domain.Entry,
 	allTags []string,
@@ -563,6 +571,7 @@ func buildArchiveView(
 		Name:        name,
 		Description: description,
 		BannerURL:   bannerURL,
+		ThemeCSS:    renderTopicThemeCSS(theme),
 		Links:       linkViews,
 		Years:       yearViews,
 		Tags:        tagViews,
@@ -617,6 +626,44 @@ func renderTopicPreviewHTML(preview string) template.HTML {
 	}
 
 	return template.HTML(markdown.ToHTML([]byte(preview), nil, nil))
+}
+
+func renderTopicThemeCSS(theme domain.TopicTheme) template.CSS {
+	rules := make([]string, 0, 8)
+	appendRule := func(variable, value string) {
+		if value == "" {
+			return
+		}
+		rules = append(rules, fmt.Sprintf("%s: %s;", variable, value))
+	}
+
+	appendRule("--color-background", theme.Background)
+	appendRule("--color-accent", theme.Accent)
+	appendRule("--color-heading", theme.Heading)
+	appendRule("--color-muted", theme.Muted)
+	appendRule("--color-surface", theme.Surface)
+	appendRule("--color-border", theme.Border)
+	appendRule("--color-code-bg", theme.CodeBG)
+	appendRule("--color-code-border", theme.CodeBorder)
+
+	if len(rules) == 0 {
+		return ""
+	}
+
+	return template.CSS(":root {\n" + strings.Join(rules, "\n") + "\n}")
+}
+
+func topicThemeFingerprint(theme domain.TopicTheme) string {
+	return hashStrings(
+		theme.Background,
+		theme.Accent,
+		theme.Heading,
+		theme.Muted,
+		theme.Surface,
+		theme.Border,
+		theme.CodeBG,
+		theme.CodeBorder,
+	)
 }
 
 func topicBannerURL(topic domain.Topic, assetURL func(name string) string) string {

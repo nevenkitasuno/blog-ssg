@@ -161,6 +161,42 @@ func TestLoaderLoadsTopicMetaPagesAndAssets(t *testing.T) {
 	}
 }
 
+func TestLoaderLoadsTopicTheme(t *testing.T) {
+	root := t.TempDir()
+	topicDir := filepath.Join(root, "Gallery")
+	if err := os.MkdirAll(filepath.Join(topicDir, "meta"), 0o755); err != nil {
+		t.Fatalf("mkdir meta: %v", err)
+	}
+
+	writeEntryPage(t, filepath.Join(topicDir, "2025 12 11 Entry with date", "1.md"), "Preview")
+	if err := os.WriteFile(filepath.Join(topicDir, "meta", "Theme.yaml"), []byte(`background: "#f5f7fa"
+accent: "#123456"
+heading: "#654321"
+muted: slategray
+surface: "rgba(1, 2, 3, 0.4)"
+border: "rgba(10, 20, 30, 0.5)"
+code_bg: "#eeeeee"
+code_border: "#cccccc"`), 0o644); err != nil {
+		t.Fatalf("write theme: %v", err)
+	}
+
+	blog, err := NewLoader(root).Load()
+	if err != nil {
+		t.Fatalf("load blog: %v", err)
+	}
+
+	theme := blog.Topics[0].Theme
+	if theme.Background != "#f5f7fa" || theme.Accent != "#123456" || theme.Heading != "#654321" || theme.Muted != "slategray" {
+		t.Fatalf("theme = %+v", theme)
+	}
+	if theme.Surface != "rgba(1, 2, 3, 0.4)" || theme.Border != "rgba(10, 20, 30, 0.5)" {
+		t.Fatalf("theme = %+v", theme)
+	}
+	if theme.CodeBG != "#eeeeee" || theme.CodeBorder != "#cccccc" {
+		t.Fatalf("theme = %+v", theme)
+	}
+}
+
 func writeEntryPage(t *testing.T, path, body string) {
 	t.Helper()
 

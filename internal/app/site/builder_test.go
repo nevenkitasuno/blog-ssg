@@ -1,6 +1,7 @@
 package site
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/nevenkitasuno/blog-ssg/internal/domain"
@@ -92,5 +93,34 @@ func TestTopicBannerURL(t *testing.T) {
 	want := "meta/top_banner.jpg"
 	if got != want {
 		t.Fatalf("topicBannerURL() = %q, want %q", got, want)
+	}
+}
+
+func TestRenderTopicThemeCSS(t *testing.T) {
+	theme := domain.TopicTheme{
+		Background: "#f5f7fa",
+		Accent:     "#123456",
+		Heading:    "#654321",
+		Muted:      "slategray",
+		Surface:    "rgba(1, 2, 3, 0.4)",
+		Border:     "rgba(10, 20, 30, 0.5)",
+		CodeBG:     "#eeeeee",
+		CodeBorder: "#cccccc",
+	}
+
+	got := string(renderTopicThemeCSS(theme))
+	for _, want := range []string{
+		"--color-background: #f5f7fa;",
+		"--color-accent: #123456;",
+		"--color-heading: #654321;",
+		"--color-muted: slategray;",
+		"--color-surface: rgba(1, 2, 3, 0.4);",
+		"--color-border: rgba(10, 20, 30, 0.5);",
+		"--color-code-bg: #eeeeee;",
+		"--color-code-border: #cccccc;",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("renderTopicThemeCSS() = %q, missing %q", got, want)
+		}
 	}
 }

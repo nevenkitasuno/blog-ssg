@@ -8,9 +8,21 @@ type Topic struct {
 	Name    string
 	Slug    string
 	Links   []TopicLink
+	Theme   TopicTheme
 	Meta    []TopicMetaPage
 	Assets  []Asset
 	Entries []Entry
+}
+
+type TopicTheme struct {
+	Background string
+	Accent     string
+	Heading    string
+	Muted      string
+	Surface    string
+	Border     string
+	CodeBG     string
+	CodeBorder string
 }
 
 type TopicLink struct {

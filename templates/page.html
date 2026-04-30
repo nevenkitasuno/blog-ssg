@@ -6,6 +6,7 @@
     <title>{{.EntryTitle}}</title>
     <link rel="stylesheet" href="{{.CSS}}">
     <link rel="icon" href="{{.Icon}}" type="image/png">
+    {{if .ThemeCSS}}<style>{{.ThemeCSS}}</style>{{end}}
 </head>
 <body>
     <p><a href="{{.TopicURL}}">{{.TopicName}}</a></p>
