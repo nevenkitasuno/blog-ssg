@@ -212,6 +212,15 @@ func (b *Builder) plan(blog domain.Blog) ([]generatedFile, error) {
 		for _, link := range topic.Links {
 			topicFingerprint = hashStrings(topicFingerprint, link.Label, link.Target, fmt.Sprintf("%t", link.External))
 		}
+		for _, metaPage := range topic.Meta {
+			topicFingerprint = hashStrings(topicFingerprint, metaPage.Name, metaPage.File.Path, metaPage.File.Body)
+		}
+		for _, asset := range topic.Assets {
+			assetFingerprint, err := fileFingerprint(asset.Path)
+			if err == nil {
+				topicFingerprint = hashStrings(topicFingerprint, assetFingerprint)
+			}
+		}
 		for _, entry := range topic.Entries {
 			topicFingerprint = hashStrings(topicFingerprint, entry.Name, strings.Join(entry.Tags, "\x00"))
 			for _, page := range entry.Pages {
@@ -230,6 +239,8 @@ func (b *Builder) plan(blog domain.Blog) ([]generatedFile, error) {
 
 		tagFiles := b.planTagFiles(topic)
 		files = append(files, tagFiles...)
+		metaFiles := b.planTopicMetaFiles(topic, filepath.Join(b.outputDir, "topics", topic.Slug))
+		files = append(files, metaFiles...)
 		entryFiles := b.planEntryFiles(topic, filepath.Join(b.outputDir, "topics", topic.Slug))
 		files = append(files, entryFiles...)
 	}
@@ -378,6 +389,9 @@ func (b *Builder) planTagFiles(topic domain.Topic) []generatedFile {
 		for _, link := range topic.Links {
 			fingerprint = hashStrings(fingerprint, link.Label, link.Target, fmt.Sprintf("%t", link.External))
 		}
+		for _, metaPage := range topic.Meta {
+			fingerprint = hashStrings(fingerprint, metaPage.Name, metaPage.File.Path, metaPage.File.Body)
+		}
 		for _, entry := range tagEntries[tag] {
 			fingerprint = hashStrings(fingerprint, entry.Name, strings.Join(entry.Tags, "\x00"))
 			for _, page := range entry.Pages {
@@ -391,6 +405,52 @@ func (b *Builder) planTagFiles(topic domain.Topic) []generatedFile {
 			fingerprint: fingerprint,
 			render: func() ([]byte, error) {
 				return b.renderer.RenderTopic(viewCopy)
+			},
+		})
+	}
+
+	return files
+}
+
+func (b *Builder) planTopicMetaFiles(topic domain.Topic, topicBaseDir string) []generatedFile {
+	files := make([]generatedFile, 0, len(topic.Meta)+len(topic.Assets))
+	metaOutputDir := filepath.Join(topicBaseDir, "meta")
+
+	for _, metaPage := range topic.Meta {
+		pagePath := filepath.Join(metaOutputDir, metaPage.Slug, "index.html")
+		view := pageView{
+			TopicName:   topic.Name,
+			TopicURL:    relativePath(pagePath, filepath.Join(topicBaseDir, "index.html")),
+			EntryTitle:  metaPage.Title,
+			ContentHTML: renderPageHTML(metaPage.File.Body, pagePath, metaOutputDir),
+			HomeURL:     relativePath(pagePath, filepath.Join(b.outputDir, "index.html")),
+			CSS:         relativePath(pagePath, filepath.Join(b.outputDir, "style.css")),
+			Icon:        relativePath(pagePath, filepath.Join(b.outputDir, "images", "favicon.png")),
+		}
+
+		viewCopy := view
+		files = append(files, generatedFile{
+			path:        pagePath,
+			fingerprint: hashStrings(b.renderer.Digest(), topic.Name, metaPage.Name, metaPage.File.Path, metaPage.File.Body),
+			render: func() ([]byte, error) {
+				return b.renderer.RenderPage(viewCopy)
+			},
+		})
+	}
+
+	for _, asset := range topic.Assets {
+		assetPath := filepath.Join(metaOutputDir, asset.Name)
+		fingerprint, err := fileFingerprint(asset.Path)
+		if err != nil {
+			continue
+		}
+
+		sourcePath := asset.Path
+		files = append(files, generatedFile{
+			path:        assetPath,
+			fingerprint: fingerprint,
+			render: func() ([]byte, error) {
+				return os.ReadFile(sourcePath)
 			},
 		})
 	}
@@ -528,7 +588,7 @@ func resolveTopicLink(link domain.TopicLink) string {
 			return filepath.ToSlash(filepath.Join(slugifySegment(dir), fmt.Sprintf("%d", number), "index.html"))
 		}
 
-		target = dir
+		return filepath.ToSlash(filepath.Join(slugifySegment(dir), slugifySegment(name), "index.html"))
 	}
 
 	return filepath.ToSlash(filepath.Join(slugifySegment(target), "index.html"))

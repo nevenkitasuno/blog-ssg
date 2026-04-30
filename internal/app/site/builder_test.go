@@ -62,6 +62,11 @@ func TestResolveTopicLink(t *testing.T) {
 			link: domain.TopicLink{Label: "Page", Target: "2026 03 Коты/2.md"},
 			want: "2026-03-коты/2/index.html",
 		},
+		{
+			name: "topic meta page",
+			link: domain.TopicLink{Label: "Meta", Target: "meta/Ktotam.md"},
+			want: "meta/ktotam/index.html",
+		},
 	}
 
 	for _, tt := range tests {

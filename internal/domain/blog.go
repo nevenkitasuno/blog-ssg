@@ -8,6 +8,8 @@ type Topic struct {
 	Name    string
 	Slug    string
 	Links   []TopicLink
+	Meta    []TopicMetaPage
+	Assets  []Asset
 	Entries []Entry
 }
 
@@ -15,6 +17,13 @@ type TopicLink struct {
 	Label    string
 	Target   string
 	External bool
+}
+
+type TopicMetaPage struct {
+	Name  string
+	Slug  string
+	Title string
+	File  MarkdownFile
 }
 
 type Entry struct {

@@ -128,6 +128,39 @@ func TestLoaderExtractsTopicLinks(t *testing.T) {
 	}
 }
 
+func TestLoaderLoadsTopicMetaPagesAndAssets(t *testing.T) {
+	root := t.TempDir()
+	topicDir := filepath.Join(root, "Gallery")
+	if err := os.MkdirAll(filepath.Join(topicDir, "meta"), 0o755); err != nil {
+		t.Fatalf("mkdir meta: %v", err)
+	}
+
+	writeEntryPage(t, filepath.Join(topicDir, "2025 12 11 Entry with date", "1.md"), "Preview")
+	writeEntryPage(t, filepath.Join(topicDir, "meta", "About.md"), "About topic")
+	if err := os.WriteFile(filepath.Join(topicDir, "meta", "banner.jpg"), []byte("jpg"), 0o644); err != nil {
+		t.Fatalf("write asset: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(topicDir, "meta", "Links.md"), []byte("- [External](https://example.com)"), 0o644); err != nil {
+		t.Fatalf("write links: %v", err)
+	}
+
+	blog, err := NewLoader(root).Load()
+	if err != nil {
+		t.Fatalf("load blog: %v", err)
+	}
+
+	topic := blog.Topics[0]
+	if len(topic.Meta) != 1 {
+		t.Fatalf("meta pages = %d, want 1", len(topic.Meta))
+	}
+	if topic.Meta[0].Name != "About.md" || topic.Meta[0].Slug != "about" || topic.Meta[0].Title != "About" {
+		t.Fatalf("meta page = %+v", topic.Meta[0])
+	}
+	if len(topic.Assets) != 1 || topic.Assets[0].Name != "banner.jpg" {
+		t.Fatalf("meta assets = %+v", topic.Assets)
+	}
+}
+
 func writeEntryPage(t *testing.T, path, body string) {
 	t.Helper()
 

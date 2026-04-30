@@ -72,6 +72,8 @@ func (l *Loader) loadTopic(name string) (domain.Topic, bool, error) {
 		Name:    name,
 		Slug:    slugify(name),
 		Links:   nil,
+		Meta:    nil,
+		Assets:  nil,
 		Entries: make([]domain.Entry, 0, len(entries)),
 	}
 
@@ -80,6 +82,13 @@ func (l *Loader) loadTopic(name string) (domain.Topic, bool, error) {
 		return domain.Topic{}, false, err
 	}
 	topic.Links = links
+
+	metaPages, metaAssets, err := l.loadTopicMeta(name)
+	if err != nil {
+		return domain.Topic{}, false, err
+	}
+	topic.Meta = metaPages
+	topic.Assets = metaAssets
 
 	for _, entryDir := range entries {
 		if !entryDir.IsDir() {
@@ -300,6 +309,73 @@ func (l *Loader) loadTopicLinks(topicName string) ([]domain.TopicLink, error) {
 	}
 
 	return extractTopicLinks(string(body)), nil
+}
+
+func (l *Loader) loadTopicMeta(topicName string) ([]domain.TopicMetaPage, []domain.Asset, error) {
+	metaDir := filepath.Join(l.contentDir, topicName, "meta")
+	files, err := os.ReadDir(metaDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil, nil
+		}
+		return nil, nil, fmt.Errorf("read topic meta %q: %w", metaDir, err)
+	}
+
+	pages := make([]domain.TopicMetaPage, 0, len(files))
+	assets := make([]domain.Asset, 0, len(files))
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+
+		path := filepath.Join(metaDir, file.Name())
+		if strings.EqualFold(file.Name(), "Links.md") {
+			continue
+		}
+
+		if filepath.Ext(file.Name()) != ".md" {
+			assets = append(assets, domain.Asset{
+				Name: file.Name(),
+				Path: path,
+			})
+			continue
+		}
+
+		body, err := os.ReadFile(path)
+		if err != nil {
+			return nil, nil, fmt.Errorf("read topic meta page %q: %w", path, err)
+		}
+
+		markdownBody, _, err := splitFrontMatter(string(body))
+		if err != nil {
+			return nil, nil, fmt.Errorf("parse front matter in %q: %w", path, err)
+		}
+
+		trimmed := strings.TrimSpace(markdownBody)
+		if trimmed == "" {
+			continue
+		}
+
+		baseName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
+		pages = append(pages, domain.TopicMetaPage{
+			Name:  file.Name(),
+			Slug:  slugify(baseName),
+			Title: baseName,
+			File: domain.MarkdownFile{
+				Path: path,
+				Body: trimmed,
+			},
+		})
+	}
+
+	slices.SortFunc(pages, func(left, right domain.TopicMetaPage) int {
+		return strings.Compare(left.Name, right.Name)
+	})
+	slices.SortFunc(assets, func(left, right domain.Asset) int {
+		return strings.Compare(left.Name, right.Name)
+	})
+
+	return pages, assets, nil
 }
 
 func extractTopicLinks(body string) []domain.TopicLink {
