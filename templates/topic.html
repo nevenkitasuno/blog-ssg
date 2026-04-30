@@ -8,6 +8,9 @@
     <link rel="icon" href="{{.Icon}}" type="image/png">
 </head>
 <body>
+    {{if .BannerURL}}
+    <img class="topic-banner" src="{{.BannerURL}}" alt="{{.Name}}">
+    {{end}}
     <h1>{{.Name}}</h1>
 
     {{if .Links}}

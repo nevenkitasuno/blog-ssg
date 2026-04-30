@@ -97,6 +97,7 @@ type pageTagView struct {
 type topicView struct {
 	Name        string
 	Description string
+	BannerURL   string
 	Links       []topicLinkView
 	Years       []topicYearView
 	Tags        []topicTagView
@@ -365,6 +366,9 @@ func (b *Builder) planTagFiles(topic domain.Topic) []generatedFile {
 			filepath.ToSlash(filepath.Join("..", "..", "index.html")),
 			filepath.ToSlash(filepath.Join("..", "..", "..", "..", "style.css")),
 			filepath.ToSlash(filepath.Join("..", "..", "..", "..", "images", "favicon.png")),
+			topicBannerURL(topic, func(name string) string {
+				return filepath.ToSlash(filepath.Join("..", "..", "meta", name))
+			}),
 			topic.Links,
 			tagEntries[tag],
 			tagNames,
@@ -467,6 +471,9 @@ func buildTopicView(topic domain.Topic) topicView {
 		"",
 		filepath.ToSlash(filepath.Join("..", "..", "style.css")),
 		filepath.ToSlash(filepath.Join("..", "..", "images", "favicon.png")),
+		topicBannerURL(topic, func(name string) string {
+			return filepath.ToSlash(filepath.Join("meta", name))
+		}),
 		topic.Links,
 		topic.Entries,
 		collectTopicTags(topic),
@@ -492,6 +499,7 @@ func buildArchiveView(
 	parentURL string,
 	css string,
 	icon string,
+	bannerURL string,
 	links []domain.TopicLink,
 	entries []domain.Entry,
 	allTags []string,
@@ -554,6 +562,7 @@ func buildArchiveView(
 	return topicView{
 		Name:        name,
 		Description: description,
+		BannerURL:   bannerURL,
 		Links:       linkViews,
 		Years:       yearViews,
 		Tags:        tagViews,
@@ -608,6 +617,22 @@ func renderTopicPreviewHTML(preview string) template.HTML {
 	}
 
 	return template.HTML(markdown.ToHTML([]byte(preview), nil, nil))
+}
+
+func topicBannerURL(topic domain.Topic, assetURL func(name string) string) string {
+	for _, asset := range topic.Assets {
+		ext := strings.ToLower(filepath.Ext(asset.Name))
+		base := strings.TrimSuffix(strings.ToLower(asset.Name), ext)
+		if base != "top_banner" {
+			continue
+		}
+		switch ext {
+		case ".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif":
+			return assetURL(asset.Name)
+		}
+	}
+
+	return ""
 }
 
 func collectTopicTags(topic domain.Topic) []string {

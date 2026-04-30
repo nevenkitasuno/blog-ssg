@@ -77,3 +77,20 @@ func TestResolveTopicLink(t *testing.T) {
 		})
 	}
 }
+
+func TestTopicBannerURL(t *testing.T) {
+	topic := domain.Topic{
+		Assets: []domain.Asset{
+			{Name: "banner.jpg"},
+			{Name: "top_banner.jpg"},
+		},
+	}
+
+	got := topicBannerURL(topic, func(name string) string {
+		return "meta/" + name
+	})
+	want := "meta/top_banner.jpg"
+	if got != want {
+		t.Fatalf("topicBannerURL() = %q, want %q", got, want)
+	}
+}
