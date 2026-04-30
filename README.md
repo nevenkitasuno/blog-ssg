@@ -2,7 +2,7 @@
 
 Static site generator блога.
 
-[Пример блога](https://nevenkitasuno.github.io/book-ssg/) , сгенерированного по содержимому папки `/content`
+[Пример блога](https://nevenkitasuno.github.io/blog-ssg/) , сгенерированного по содержимому папки `/content`
 
 - Читает Markdown контент из `content/`
 - Поддержка тегов и картинок
