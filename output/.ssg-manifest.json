@@ -1,17 +1,23 @@
 {
   "files": {
-    "output/index.html": "d476f74a3005cc3bc9a03a837289a8ab0045c97cf9c0c34e43f3f4b028c61a63",
-    "output/topics/моя-галерея/2025-12-11-ещё-запись/index.html": "b03690aae58f9e6ada81471f5566ecc5aed3fa5eafab15b34f998a16ca2fe7c8",
-    "output/topics/моя-галерея/2025-12-11-запись-с-датой/index.html": "713d8614f19915cc564605b4d8d04d7f3aabafe28a62cf9ee73a59575ee06057",
-    "output/topics/моя-галерея/2025-12-12-на-следующий-день/index.html": "93e951c13f3ba02a54adf2e1f607a1cfc9781caa56d91ac237a12c9cd1ec6c93",
-    "output/topics/моя-галерея/2025-12-первая-запись/index.html": "d915a7a9dbbc9667e8078eb3ef125993531d302a48b8fee49b6457237d806476",
-    "output/topics/моя-галерея/2026-03-коты/2/index.html": "b8b777022d4d07f6ddcbdaaa43a2540248f97753813b69bf9730a6a2183cc508",
+    "output/index.html": "3eebfa60acfb06f31516371c799414da36004c6b52f0b551361048808e15ec51",
+    "output/topics/маджонг-блог/2026-05-01-куикаэ/index.html": "1d36b5e02f62f5c94e1232dc1f757f1f4c0f95ef4cfe21e774c621dde9986d1f",
+    "output/topics/маджонг-блог/index.html": "705b869cc501e6b697a9f2d3eed4bd3ce29b3c2a7b006f815e232e68b1982bc9",
+    "output/topics/маджонг-блог/meta/buy-goods/index.html": "b7f01ef9cde252ca83f07cd90713f16b6547ec67e9a078e68c860e640ef0a29b",
+    "output/topics/маджонг-блог/meta/digital-riichi/index.html": "c2b8225d56337eb340b72917581faec2d54d6ceb6616e71a63004be5857f43c5",
+    "output/topics/маджонг-блог/meta/top_banner.png": "20cc6741137979e3bc7ad9f4ebd82d99b74b309aff46abb5ed7ac630bbc5272e",
+    "output/topics/маджонг-блог/tags/правила-риичи/index.html": "ebc62b785128224c519dbf52cc948a271f71511e3bfa7245870d54859b6744b7",
+    "output/topics/моя-галерея/2025-12-11-ещё-запись/index.html": "03b5a706a1cb9469696a4697981a291d516db1e0fb5840d9bed440141b750ec7",
+    "output/topics/моя-галерея/2025-12-11-запись-с-датой/index.html": "70e760c8f73473ef4737859e1865b1fe2abd46ca2089a367b1fec074901b9494",
+    "output/topics/моя-галерея/2025-12-12-на-следующий-день/index.html": "cd04f4a777181c78a02f6aa1b27e64b36170f4240763b163b75d23a58693a7b6",
+    "output/topics/моя-галерея/2025-12-первая-запись/index.html": "99fd62d7c43b7b421299510c5fa3b22062c5cb2ea2f7838f707fc38f6ca96544",
+    "output/topics/моя-галерея/2026-03-коты/2/index.html": "e495a70e798d8f0aa8066c3e174c81abce9a60874d9920a5e60f34f7b22fdf13",
     "output/topics/моя-галерея/2026-03-коты/image.png": "553e81fba4a049b7320d26ffeace9b4ace248e5bc6a3f7e591989070e88d1307",
-    "output/topics/моя-галерея/2026-03-коты/index.html": "7913713e426da7bfb7bdea050af05f095e30f0b607574fa4e6540cd23c455c87",
-    "output/topics/моя-галерея/index.html": "26708506d9baab5bab5ec55705eb55584e8657a82d08abb61c2db15e58b3eba0",
-    "output/topics/моя-галерея/meta/ktotam/index.html": "7dad26577faabba6f6a7e8d7dba7cb33ec94d8a3c46a6d9276eb3d2ef9351596",
+    "output/topics/моя-галерея/2026-03-коты/index.html": "b45a20d0a1a474629dcb00aa3f4cde7f459033c8f036edef8d0ee7ff556d5f57",
+    "output/topics/моя-галерея/index.html": "45b645734669d04edbee17502c26969d8a8e57f5f231463e7ded4689436824ba",
+    "output/topics/моя-галерея/meta/ktotam/index.html": "c4c6d7620c6f6c59729098b503d4858516296c0c1a689fe6038529450a95ec11",
     "output/topics/моя-галерея/meta/top_banner.jpg": "64fa022d394d9e3be871b20a1c59919fd29689707f16bfeb538a8ebe199ad98c",
-    "output/topics/моя-галерея/tags/котики/index.html": "94ee98f4f8aa56776bfdbcde303ec5e7430bc36d7a54108fb05317444e5d4179",
-    "output/topics/моя-галерея/tags/фото/index.html": "f86eb29f3a4daded86f7ae7330903dbf8c4f2a3c6ba3d955586534ab6f61b0fa"
+    "output/topics/моя-галерея/tags/котики/index.html": "041d0d35b0b196b16aa9cff35620b0e1e79cf2404763ba8910bdc7e7704f32d3",
+    "output/topics/моя-галерея/tags/фото/index.html": "b8759c5dfb4592b449f071cad50093b9e77a9d54ba60d22f0f00078625ff84db"
   }
 }

@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 
 	"github.com/gomarkdown/markdown"
 
@@ -209,8 +210,8 @@ func (b *Builder) plan(blog domain.Blog) ([]generatedFile, error) {
 			URL:  filepath.ToSlash(filepath.Join("topics", topic.Slug, "index.html")),
 		})
 
-		topicData := buildTopicView(topic)
 		topicPath := filepath.Join(b.outputDir, "topics", topic.Slug, "index.html")
+		topicData := buildTopicView(topic, topicPath, b.outputDir)
 		topicFingerprint := hashStrings(templateDigest, topic.Name, topicThemeFingerprint(topic.Theme))
 		for _, link := range topic.Links {
 			topicFingerprint = hashStrings(topicFingerprint, link.Label, link.Target, fmt.Sprintf("%t", link.External))
@@ -286,7 +287,7 @@ func (b *Builder) planEntryFiles(topic domain.Topic, topicBaseDir string) []gene
 				TopicURL:    relativePath(pagePath, filepath.Join(topicBaseDir, "index.html")),
 				EntryName:   entry.Name,
 				EntryTitle:  entry.Title,
-				ThemeCSS:    renderTopicThemeCSS(topic.Theme),
+				ThemeCSS:    renderTopicThemeCSS(topic.Theme, relativePath(pagePath, filepath.Join(b.outputDir, topic.Theme.FontFile))),
 				Tags:        buildPageTags(pagePath, topicBaseDir, entry),
 				PageNumber:  page.Number,
 				ContentHTML: renderPageHTML(page.File.Body, pagePath, entryDir),
@@ -362,6 +363,7 @@ func (b *Builder) planTagFiles(topic domain.Topic) []generatedFile {
 	}
 
 	for _, tag := range tagNames {
+		path := filepath.Join(b.outputDir, "topics", topic.Slug, "tags", slugifySegment(tag), "index.html")
 		view := buildArchiveView(
 			topic.Name,
 			fmt.Sprintf("Тег: %s", tag),
@@ -373,7 +375,7 @@ func (b *Builder) planTagFiles(topic domain.Topic) []generatedFile {
 			topicBannerURL(topic, func(name string) string {
 				return filepath.ToSlash(filepath.Join("..", "..", "meta", name))
 			}),
-			topic.Theme,
+			renderTopicThemeCSS(topic.Theme, relativePath(path, filepath.Join(b.outputDir, topic.Theme.FontFile))),
 			topic.Links,
 			tagEntries[tag],
 			tagNames,
@@ -393,7 +395,6 @@ func (b *Builder) planTagFiles(topic domain.Topic) []generatedFile {
 			},
 		)
 
-		path := filepath.Join(b.outputDir, "topics", topic.Slug, "tags", slugifySegment(tag), "index.html")
 		fingerprint := hashStrings(b.renderer.Digest(), topic.Name, tag, topicThemeFingerprint(topic.Theme))
 		for _, link := range topic.Links {
 			fingerprint = hashStrings(fingerprint, link.Label, link.Target, fmt.Sprintf("%t", link.External))
@@ -431,7 +432,7 @@ func (b *Builder) planTopicMetaFiles(topic domain.Topic, topicBaseDir string) []
 			TopicName:   topic.Name,
 			TopicURL:    relativePath(pagePath, filepath.Join(topicBaseDir, "index.html")),
 			EntryTitle:  metaPage.Title,
-			ThemeCSS:    renderTopicThemeCSS(topic.Theme),
+			ThemeCSS:    renderTopicThemeCSS(topic.Theme, relativePath(pagePath, filepath.Join(b.outputDir, topic.Theme.FontFile))),
 			ContentHTML: renderPageHTML(metaPage.File.Body, pagePath, metaOutputDir),
 			HomeURL:     relativePath(pagePath, filepath.Join(b.outputDir, "index.html")),
 			CSS:         relativePath(pagePath, filepath.Join(b.outputDir, "style.css")),
@@ -468,7 +469,7 @@ func (b *Builder) planTopicMetaFiles(topic domain.Topic, topicBaseDir string) []
 	return files
 }
 
-func buildTopicView(topic domain.Topic) topicView {
+func buildTopicView(topic domain.Topic, topicPath, outputDir string) topicView {
 	return buildArchiveView(
 		topic.Name,
 		"",
@@ -480,7 +481,7 @@ func buildTopicView(topic domain.Topic) topicView {
 		topicBannerURL(topic, func(name string) string {
 			return filepath.ToSlash(filepath.Join("meta", name))
 		}),
-		topic.Theme,
+		renderTopicThemeCSS(topic.Theme, relativePath(topicPath, filepath.Join(outputDir, topic.Theme.FontFile))),
 		topic.Links,
 		topic.Entries,
 		collectTopicTags(topic),
@@ -507,7 +508,7 @@ func buildArchiveView(
 	css string,
 	icon string,
 	bannerURL string,
-	theme domain.TopicTheme,
+	themeCSS template.CSS,
 	links []domain.TopicLink,
 	entries []domain.Entry,
 	allTags []string,
@@ -571,7 +572,7 @@ func buildArchiveView(
 		Name:        name,
 		Description: description,
 		BannerURL:   bannerURL,
-		ThemeCSS:    renderTopicThemeCSS(theme),
+		ThemeCSS:    themeCSS,
 		Links:       linkViews,
 		Years:       yearViews,
 		Tags:        tagViews,
@@ -625,16 +626,27 @@ func renderTopicPreviewHTML(preview string) template.HTML {
 		return ""
 	}
 
-	return template.HTML(markdown.ToHTML([]byte(preview), nil, nil))
+	return template.HTML(markdown.ToHTML([]byte(transformCustomInlineTags(preview)), nil, nil))
 }
 
-func renderTopicThemeCSS(theme domain.TopicTheme) template.CSS {
-	rules := make([]string, 0, 8)
+func renderTopicThemeCSS(theme domain.TopicTheme, fontURL string) template.CSS {
+	blocks := make([]string, 0, 2)
+	rules := make([]string, 0, 9)
 	appendRule := func(variable, value string) {
 		if value == "" {
 			return
 		}
 		rules = append(rules, fmt.Sprintf("%s: %s;", variable, value))
+	}
+
+	if theme.FontFamily != "" && theme.FontFile != "" && fontURL != "" {
+		escapedFamily := strings.ReplaceAll(theme.FontFamily, `"`, `\"`)
+		blocks = append(blocks, fmt.Sprintf(`@font-face {
+font-family: "%s";
+src: url("%s") format("opentype");
+font-display: swap;
+}`, escapedFamily, fontURL))
+		appendRule("--font-topic", fmt.Sprintf(`"%s"`, escapedFamily))
 	}
 
 	appendRule("--color-background", theme.Background)
@@ -647,15 +659,18 @@ func renderTopicThemeCSS(theme domain.TopicTheme) template.CSS {
 	appendRule("--color-code-border", theme.CodeBorder)
 
 	if len(rules) == 0 {
-		return ""
+		return template.CSS(strings.Join(blocks, "\n"))
 	}
 
-	return template.CSS(":root {\n" + strings.Join(rules, "\n") + "\n}")
+	blocks = append(blocks, ":root {\n"+strings.Join(rules, "\n")+"\n}")
+	return template.CSS(strings.Join(blocks, "\n"))
 }
 
 func topicThemeFingerprint(theme domain.TopicTheme) string {
 	return hashStrings(
 		theme.Background,
+		theme.FontFamily,
+		theme.FontFile,
 		theme.Accent,
 		theme.Heading,
 		theme.Muted,
@@ -734,7 +749,88 @@ func renderPageHTML(markdownBody, pagePath, entryDir string) template.HTML {
 		return fmt.Sprintf("![](%s)", imagePath)
 	})
 
+	normalized = transformCustomInlineTags(normalized)
+
 	return template.HTML(markdown.ToHTML([]byte(normalized), nil, nil))
+}
+
+func transformCustomInlineTags(input string) string {
+	rendered, _, _ := parseCustomInlineTags(input, 0, "", true)
+	return rendered
+}
+
+func parseCustomInlineTags(input string, start int, closingTag string, topLevel bool) (string, int, bool) {
+	var builder strings.Builder
+	i := start
+
+	for i < len(input) {
+		if input[i] == '[' {
+			if end := strings.IndexByte(input[i:], ']'); end >= 0 {
+				tag := input[i+1 : i+end]
+				next := i + end + 1
+
+				if closingTag != "" && tag == "/"+closingTag {
+					return builder.String(), next, true
+				}
+
+				if isSupportedInlineTag(tag) {
+					inner, after, closed := parseCustomInlineTags(input, next, tag, false)
+					if closed {
+						builder.WriteString(renderInlineTag(tag, inner))
+						i = after
+						continue
+					}
+				}
+			}
+		}
+
+		_, size := utf8.DecodeRuneInString(input[i:])
+		segment := input[i : i+size]
+		if topLevel {
+			builder.WriteString(segment)
+		} else {
+			builder.WriteString(template.HTMLEscapeString(segment))
+		}
+		i += size
+	}
+
+	return builder.String(), i, false
+}
+
+func isSupportedInlineTag(tag string) bool {
+	switch tag {
+	case "font-mahjong-colored", "rot-90":
+		return true
+	default:
+		return false
+	}
+}
+
+func renderInlineTag(tag, inner string) string {
+	switch tag {
+	case "font-mahjong-colored":
+		return `<span class="font-mahjong-colored">` + inner + `</span>`
+	case "rot-90":
+		return renderRot90HTML(inner)
+	default:
+		return inner
+	}
+}
+
+func renderRot90HTML(inner string) string {
+	var builder strings.Builder
+	builder.WriteString(`<span class="rot-90">`)
+	for _, r := range inner {
+		if unicode.IsSpace(r) {
+			builder.WriteString(`<span class="rot-90-gap"></span>`)
+			continue
+		}
+		builder.WriteString(`<span class="rot-90-char">`)
+		builder.WriteString(template.HTMLEscapeString(string(r)))
+		builder.WriteString(`</span>`)
+	}
+	builder.WriteString(`</span>`)
+	return builder.String()
 }
 
 func fileFingerprint(path string) (string, error) {

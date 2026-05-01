@@ -108,7 +108,7 @@ func TestRenderTopicThemeCSS(t *testing.T) {
 		CodeBorder: "#cccccc",
 	}
 
-	got := string(renderTopicThemeCSS(theme))
+	got := string(renderTopicThemeCSS(theme, ""))
 	for _, want := range []string{
 		"--color-background: #f5f7fa;",
 		"--color-accent: #123456;",
@@ -121,6 +121,21 @@ func TestRenderTopicThemeCSS(t *testing.T) {
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("renderTopicThemeCSS() = %q, missing %q", got, want)
+		}
+	}
+}
+
+func TestTransformCustomInlineTags(t *testing.T) {
+	got := transformCustomInlineTags(`Про правило [font-mahjong-colored]🀁 [rot-90]🀂 🀃[/rot-90] 🀄[/font-mahjong-colored]`)
+	for _, want := range []string{
+		`<span class="font-mahjong-colored">`,
+		`<span class="rot-90">`,
+		`<span class="rot-90-char">🀂</span>`,
+		`<span class="rot-90-char">🀃</span>`,
+		`<span class="rot-90-gap"></span>`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("transformCustomInlineTags() = %q, missing %q", got, want)
 		}
 	}
 }

@@ -33,6 +33,8 @@ type frontMatter struct {
 
 type topicThemeFile struct {
 	Background string `yaml:"background"`
+	FontFamily string `yaml:"font_family"`
+	FontFile   string `yaml:"font_file"`
 	Accent     string `yaml:"accent"`
 	Heading    string `yaml:"heading"`
 	Muted      string `yaml:"muted"`
@@ -465,6 +467,8 @@ func extractTopicLinks(body string) []domain.TopicLink {
 func normalizeTopicTheme(raw topicThemeFile) domain.TopicTheme {
 	return domain.TopicTheme{
 		Background: normalizeColorValue(raw.Background),
+		FontFamily: normalizeFontFamily(raw.FontFamily),
+		FontFile:   normalizeFontFile(raw.FontFile),
 		Accent:     normalizeColorValue(raw.Accent),
 		Heading:    normalizeColorValue(raw.Heading),
 		Muted:      normalizeColorValue(raw.Muted),
@@ -473,6 +477,17 @@ func normalizeTopicTheme(raw topicThemeFile) domain.TopicTheme {
 		CodeBG:     normalizeColorValue(raw.CodeBG),
 		CodeBorder: normalizeColorValue(raw.CodeBorder),
 	}
+}
+
+func normalizeFontFamily(value string) string {
+	return strings.TrimSpace(value)
+}
+
+func normalizeFontFile(value string) string {
+	trimmed := filepath.ToSlash(strings.TrimSpace(value))
+	trimmed = strings.TrimPrefix(trimmed, "./")
+	trimmed = strings.TrimPrefix(trimmed, "/")
+	return trimmed
 }
 
 func normalizeColorValue(value string) string {

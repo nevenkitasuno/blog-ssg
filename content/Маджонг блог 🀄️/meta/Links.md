@@ -1,0 +1,3 @@
+- [Подробно о риичи-маджонге](http://tesuji-club.ru/)
+- [[meta/digital-riichi.md|Играть виртуально]]
+- [[meta/buy-goods.md|Купить маджонг, ханафуду и прочее]]

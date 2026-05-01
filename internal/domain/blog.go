@@ -16,6 +16,8 @@ type Topic struct {
 
 type TopicTheme struct {
 	Background string
+	FontFamily string
+	FontFile   string
 	Accent     string
 	Heading    string
 	Muted      string

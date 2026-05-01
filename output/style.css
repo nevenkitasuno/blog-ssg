@@ -4,7 +4,14 @@
     padding: 0;
  }
 
+@font-face {
+    font-family: "Mahjong Colored";
+    src: url("Mahjong.Colored.otf") format("opentype");
+    font-display: swap;
+}
+
 :root {
+    --font-topic: sans-serif;
     --color-background: #ffffff;
     --color-accent: #fa6432;
     --color-heading: #333;
@@ -20,6 +27,7 @@ html {
     overflow-y: scroll;
     height: 100%;
     font: 100%/1.5 sans-serif;
+    font-family: var(--font-topic);
     word-wrap: break-word;
     background-color: var(--color-background);
     margin: 0 auto;
@@ -82,6 +90,28 @@ img {
     margin: 0 auto;
     padding: 0.5em;
  }
+
+.font-mahjong-colored {
+    font-family: "Mahjong Colored", sans-serif;
+}
+
+.rot-90 {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.1em;
+    vertical-align: middle;
+}
+
+.rot-90-char {
+    display: inline-block;
+    transform: rotate(-90deg);
+    transform-origin: center;
+}
+
+.rot-90-gap {
+    display: inline-block;
+    width: 0.5em;
+}
 
 .topic-banner {
     width: calc(100% + 1rem);
