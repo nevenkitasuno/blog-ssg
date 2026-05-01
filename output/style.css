@@ -6,7 +6,7 @@
 
 @font-face {
     font-family: "Mahjong Colored";
-    src: url("Mahjong.Colored.woff2") format("woff2");
+    src: local("Mahjong.Colored.woff2") format("woff2");
     font-display: swap;
 }
 
