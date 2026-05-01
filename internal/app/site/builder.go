@@ -210,9 +210,10 @@ func (b *Builder) plan(blog domain.Blog) ([]generatedFile, error) {
 			URL:  filepath.ToSlash(filepath.Join("topics", topic.Slug, "index.html")),
 		})
 
-		topicPath := filepath.Join(b.outputDir, "topics", topic.Slug, "index.html")
+		topicBaseDir := filepath.Join(b.outputDir, "topics", topic.Slug)
+		topicPath := filepath.Join(topicBaseDir, "index.html")
 		topicData := buildTopicView(topic, topicPath, b.outputDir)
-		topicFingerprint := hashStrings(templateDigest, "topic-render-v2", topic.Name, topicThemeFingerprint(topic.Theme))
+		topicFingerprint := hashStrings(templateDigest, "topic-render-v2", topic.Name, topic.Slug, topicThemeFingerprint(topic.Theme))
 		for _, link := range topic.Links {
 			topicFingerprint = hashStrings(topicFingerprint, link.Label, link.Target, fmt.Sprintf("%t", link.External))
 		}
@@ -243,9 +244,9 @@ func (b *Builder) plan(blog domain.Blog) ([]generatedFile, error) {
 
 		tagFiles := b.planTagFiles(topic)
 		files = append(files, tagFiles...)
-		metaFiles := b.planTopicMetaFiles(topic, filepath.Join(b.outputDir, "topics", topic.Slug))
+		metaFiles := b.planTopicMetaFiles(topic, topicBaseDir)
 		files = append(files, metaFiles...)
-		entryFiles := b.planEntryFiles(topic, filepath.Join(b.outputDir, "topics", topic.Slug))
+		entryFiles := b.planEntryFiles(topic, topicBaseDir)
 		files = append(files, entryFiles...)
 	}
 
@@ -253,7 +254,7 @@ func (b *Builder) plan(blog domain.Blog) ([]generatedFile, error) {
 	indexDataCopy := indexData
 	indexFingerprint := hashStrings(templateDigest)
 	for _, topic := range blog.Topics {
-		indexFingerprint = hashStrings(indexFingerprint, topic.Name)
+		indexFingerprint = hashStrings(indexFingerprint, topic.Name, topic.Slug)
 	}
 
 	files = append(files, generatedFile{
@@ -395,7 +396,7 @@ func (b *Builder) planTagFiles(topic domain.Topic) []generatedFile {
 			},
 		)
 
-		fingerprint := hashStrings(b.renderer.Digest(), "topic-render-v2", topic.Name, tag, topicThemeFingerprint(topic.Theme))
+		fingerprint := hashStrings(b.renderer.Digest(), "topic-render-v2", topic.Name, topic.Slug, tag, topicThemeFingerprint(topic.Theme))
 		for _, link := range topic.Links {
 			fingerprint = hashStrings(fingerprint, link.Label, link.Target, fmt.Sprintf("%t", link.External))
 		}

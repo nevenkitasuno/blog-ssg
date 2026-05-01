@@ -16,4 +16,4 @@ Place tests next to the code they cover as `*_test.go`. Current coverage centers
 Recent history uses short Conventional Commit prefixes such as `feat:`, `fix:`, and `docs:`. Keep commit subjects imperative and specific, for example `fix: preserve custom inline tag output`. PRs should describe the user-visible change, note any content or template migrations, link related issues, and include screenshots when HTML or theme output changes.
 
 ## Content & Deployment Notes
-Topic assets and metadata belong in `content/<Topic>/meta/` (`Links.md`, `Theme.yaml`, images). Because deployment uploads `./output` directly, verify generated pages locally before merging.
+Topic assets and metadata belong in `content/<Topic>/meta/` (`Links.md`, `Config.yaml`, images). Use `link_name` in `Config.yaml` when a topic should publish under a custom `topics/<segment>/` path. Because deployment uploads `./output` directly, verify generated pages locally before merging.

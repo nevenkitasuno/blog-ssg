@@ -169,7 +169,7 @@ func TestLoaderLoadsTopicTheme(t *testing.T) {
 	}
 
 	writeEntryPage(t, filepath.Join(topicDir, "2025 12 11 Entry with date", "1.md"), "Preview")
-	if err := os.WriteFile(filepath.Join(topicDir, "meta", "Theme.yaml"), []byte(`background: "#f5f7fa"
+	if err := os.WriteFile(filepath.Join(topicDir, "meta", "Config.yaml"), []byte(`background: "#f5f7fa"
 text: "#111111"
 accent: "#123456"
 heading: "#654321"
@@ -195,6 +195,28 @@ code_border: "#cccccc"`), 0o644); err != nil {
 	}
 	if theme.CodeBG != "#eeeeee" || theme.CodeBorder != "#cccccc" {
 		t.Fatalf("theme = %+v", theme)
+	}
+}
+
+func TestLoaderUsesConfiguredTopicLinkName(t *testing.T) {
+	root := t.TempDir()
+	topicDir := filepath.Join(root, "Gallery")
+	if err := os.MkdirAll(filepath.Join(topicDir, "meta"), 0o755); err != nil {
+		t.Fatalf("mkdir meta: %v", err)
+	}
+
+	writeEntryPage(t, filepath.Join(topicDir, "2025 12 11 Entry with date", "1.md"), "Preview")
+	if err := os.WriteFile(filepath.Join(topicDir, "meta", "Config.yaml"), []byte("link_name: configured-link-name\n"), 0o644); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	blog, err := NewLoader(root).Load()
+	if err != nil {
+		t.Fatalf("load blog: %v", err)
+	}
+
+	if got := blog.Topics[0].Slug; got != "configured-link-name" {
+		t.Fatalf("topic slug = %q, want %q", got, "configured-link-name")
 	}
 }
 

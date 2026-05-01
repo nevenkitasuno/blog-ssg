@@ -1,3 +1,4 @@
+link_name: "mahjong-blog"
 background: "#12110f"        # warm near-black (not harsh)
 text: "#ddd1c4"              # default body text
 accent: "#c75b3a"            # muted orange-red (echoes sky)

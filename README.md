@@ -58,6 +58,20 @@ tags:
 Текст страницы
 ```
 
+## Конфигурация темы и ссылки
+
+Настройки темы и адрес темы задаются в `content/<Topic>/meta/Config.yaml`.
+
+Пример:
+
+```yaml
+link_name: configured-link-name
+background: "#f5f7fa"
+accent: "#123456"
+```
+
+`link_name` управляет URL темы: страница темы будет сгенерирована в `output/topics/configured-link-name/index.html`.
+
 ## Изображения
 
 Изображения можно вставлять в Markdown в стиле Obsidian:

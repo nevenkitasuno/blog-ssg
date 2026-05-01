@@ -32,6 +32,7 @@ type frontMatter struct {
 }
 
 type topicThemeFile struct {
+	LinkName   string `yaml:"link_name"`
 	Background string `yaml:"background"`
 	FontFamily string `yaml:"font_family"`
 	FontFile   string `yaml:"font_file"`
@@ -86,8 +87,8 @@ func (l *Loader) loadTopic(name string) (domain.Topic, bool, error) {
 	topic := domain.Topic{
 		Name:    name,
 		Slug:    slugify(name),
-		Links:   nil,
 		Theme:   domain.TopicTheme{},
+		Links:   nil,
 		Meta:    nil,
 		Assets:  nil,
 		Entries: make([]domain.Entry, 0, len(entries)),
@@ -99,11 +100,14 @@ func (l *Loader) loadTopic(name string) (domain.Topic, bool, error) {
 	}
 	topic.Links = links
 
-	theme, err := l.loadTopicTheme(name)
+	theme, slug, err := l.loadTopicConfig(name)
 	if err != nil {
 		return domain.Topic{}, false, err
 	}
 	topic.Theme = theme
+	if slug != "" {
+		topic.Slug = slug
+	}
 
 	metaPages, metaAssets, err := l.loadTopicMeta(name)
 	if err != nil {
@@ -351,7 +355,7 @@ func (l *Loader) loadTopicMeta(topicName string) ([]domain.TopicMetaPage, []doma
 		}
 
 		path := filepath.Join(metaDir, file.Name())
-		if strings.EqualFold(file.Name(), "Links.md") || isTopicThemeFile(file.Name()) {
+		if strings.EqualFold(file.Name(), "Links.md") || isTopicConfigFile(file.Name()) {
 			continue
 		}
 
@@ -400,26 +404,26 @@ func (l *Loader) loadTopicMeta(topicName string) ([]domain.TopicMetaPage, []doma
 	return pages, assets, nil
 }
 
-func (l *Loader) loadTopicTheme(topicName string) (domain.TopicTheme, error) {
-	for _, fileName := range []string{"Theme.yaml", "Theme.yml", "theme.yaml", "theme.yml"} {
+func (l *Loader) loadTopicConfig(topicName string) (domain.TopicTheme, string, error) {
+	for _, fileName := range []string{"Config.yaml", "Config.yml", "config.yaml", "config.yml"} {
 		path := filepath.Join(l.contentDir, topicName, "meta", fileName)
 		body, err := os.ReadFile(path)
 		if err != nil {
 			if os.IsNotExist(err) {
 				continue
 			}
-			return domain.TopicTheme{}, fmt.Errorf("read topic theme %q: %w", path, err)
+			return domain.TopicTheme{}, "", fmt.Errorf("read topic config %q: %w", path, err)
 		}
 
 		var raw topicThemeFile
 		if err := yaml.Unmarshal(body, &raw); err != nil {
-			return domain.TopicTheme{}, fmt.Errorf("parse topic theme %q: %w", path, err)
+			return domain.TopicTheme{}, "", fmt.Errorf("parse topic config %q: %w", path, err)
 		}
 
-		return normalizeTopicTheme(raw), nil
+		return normalizeTopicTheme(raw), normalizeTopicLinkName(raw.LinkName, topicName), nil
 	}
 
-	return domain.TopicTheme{}, nil
+	return domain.TopicTheme{}, "", nil
 }
 
 func extractTopicLinks(body string) []domain.TopicLink {
@@ -481,6 +485,20 @@ func normalizeTopicTheme(raw topicThemeFile) domain.TopicTheme {
 	}
 }
 
+func normalizeTopicLinkName(value, fallback string) string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return ""
+	}
+
+	slug := slugify(trimmed)
+	if slug == "item" && slugify(fallback) != "item" {
+		return ""
+	}
+
+	return slug
+}
+
 func normalizeFontFamily(value string) string {
 	return strings.TrimSpace(value)
 }
@@ -525,9 +543,9 @@ func isExternalURL(value string) bool {
 	return strings.HasPrefix(lower, "http://") || strings.HasPrefix(lower, "https://")
 }
 
-func isTopicThemeFile(name string) bool {
+func isTopicConfigFile(name string) bool {
 	switch strings.ToLower(name) {
-	case "theme.yaml", "theme.yml":
+	case "config.yaml", "config.yml":
 		return true
 	default:
 		return false

@@ -7,8 +7,8 @@ type Blog struct {
 type Topic struct {
 	Name    string
 	Slug    string
-	Links   []TopicLink
 	Theme   TopicTheme
+	Links   []TopicLink
 	Meta    []TopicMetaPage
 	Assets  []Asset
 	Entries []Entry

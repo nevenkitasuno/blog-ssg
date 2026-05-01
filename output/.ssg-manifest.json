@@ -1,13 +1,13 @@
 {
   "files": {
-    "output/index.html": "3eebfa60acfb06f31516371c799414da36004c6b52f0b551361048808e15ec51",
-    "output/topics/маджонг-блог/2026-05-01-куикаэ/index.html": "493cadfff33681f0e6a2df3813f64d53206e345cf0ff38b9c3b346aef49113cb",
-    "output/topics/маджонг-блог/index.html": "4228645d312e06e6c54fa2a9ca3461362ab259ea75caa0f51fdbef12463287e4",
-    "output/topics/маджонг-блог/meta/top_banner.png": "20cc6741137979e3bc7ad9f4ebd82d99b74b309aff46abb5ed7ac630bbc5272e",
-    "output/topics/маджонг-блог/meta/где-купить/index.html": "ccfba2307149db1d41f736c003ffb0141c69df6710aa48dde00f0870cefcef36",
-    "output/topics/маджонг-блог/meta/приложения-риичи/index.html": "8ce12499a4e68601e5b6722f427a69f7b0b13049620fcefff2ebbbbb8c4c8ee8",
-    "output/topics/маджонг-блог/tags/правила-риичи/index.html": "ff102403e7e880ca461ef067d571da471f8b097f466b2545b1b2217c2260583f",
-    "output/topics/маджонг-блог/tags/риичи/index.html": "626a2efaf4a2bbd4bfa2dc6e5884807e3bf2dd6d54cb14dffc42ac7f3ae1cd24",
+    "output/index.html": "9921f1ae24f4531105f02551e56f50a30961f452151303428ef12035eca331c8",
+    "output/topics/mahjong-blog/2026-05-01-куикаэ/index.html": "493cadfff33681f0e6a2df3813f64d53206e345cf0ff38b9c3b346aef49113cb",
+    "output/topics/mahjong-blog/index.html": "998c32cd40e21281986e78754a20412f6e9493fbb5c43d65f40b24ffea9ad232",
+    "output/topics/mahjong-blog/meta/top_banner.png": "20cc6741137979e3bc7ad9f4ebd82d99b74b309aff46abb5ed7ac630bbc5272e",
+    "output/topics/mahjong-blog/meta/где-купить/index.html": "ccfba2307149db1d41f736c003ffb0141c69df6710aa48dde00f0870cefcef36",
+    "output/topics/mahjong-blog/meta/приложения-риичи/index.html": "8ce12499a4e68601e5b6722f427a69f7b0b13049620fcefff2ebbbbb8c4c8ee8",
+    "output/topics/mahjong-blog/tags/правила-риичи/index.html": "d16b1c4afae169e297e2fb2b320b8f3f7b0a47966bdaeca96d9030e95435a9b3",
+    "output/topics/mahjong-blog/tags/риичи/index.html": "c1d67478bad03ed6cda4d8d2c27eecc1b3134bf2b97fde1757fa990059160dc9",
     "output/topics/моя-галерея/2025-12-11-ещё-запись/index.html": "0aae624c7d5c9af35d4900f7ceca884e9354af88b7b11047bc13639a0a20ebd1",
     "output/topics/моя-галерея/2025-12-11-запись-с-датой/index.html": "ce512f215593d044443b8352dec56f574c885a9f006f85e3a333e27352fa1104",
     "output/topics/моя-галерея/2025-12-12-на-следующий-день/index.html": "502496a829c7c462f33c6f27712e00ce40f4d986706604cfb30ffa00e2bc8b82",
@@ -15,10 +15,10 @@
     "output/topics/моя-галерея/2026-03-коты/2/index.html": "1b918a6c7c756decd831adf42fd64b98f9d7a4f5cd1f7b9ff5c105278bae05d9",
     "output/topics/моя-галерея/2026-03-коты/image.png": "553e81fba4a049b7320d26ffeace9b4ace248e5bc6a3f7e591989070e88d1307",
     "output/topics/моя-галерея/2026-03-коты/index.html": "18cab1dedcd24cabf72c788f85554de0c2d97f22a76bddaaba22df134f9ac818",
-    "output/topics/моя-галерея/index.html": "f853a9b3cf774d5431fbfae5514c7c9dcadcdd36d18f19f198c8b1bc62aa8eab",
+    "output/topics/моя-галерея/index.html": "7b8d926b347d4b19b33a05e2317c3540d668088884fa237ddb0751473f3c7092",
     "output/topics/моя-галерея/meta/ktotam/index.html": "bdaae119ce27ffbc71163b42a8ba0492c773031a69b1e343014ee457a4bd2846",
     "output/topics/моя-галерея/meta/top_banner.jpg": "64fa022d394d9e3be871b20a1c59919fd29689707f16bfeb538a8ebe199ad98c",
-    "output/topics/моя-галерея/tags/котики/index.html": "fd0ea6de9f7f55aa7b1f48d7068af7146ecef908b72b3d617d7e4aba64ccca69",
-    "output/topics/моя-галерея/tags/фото/index.html": "7ef4bb8125e0726bb931b337688432164af8639fb22cfd0a36d18d4d3f86d119"
+    "output/topics/моя-галерея/tags/котики/index.html": "3eed071ff3fb2c613254cc41a443f9ba4697942c248a597bd0baf04ef8aaa791",
+    "output/topics/моя-галерея/tags/фото/index.html": "f20cdd1a52794ede38a5d6b3607239b29634a64cb73679dc9e19a8e8776ac588"
   }
 }
