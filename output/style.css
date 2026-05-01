@@ -97,6 +97,15 @@ img {
     font-family: "Mahjong Colored", sans-serif;
 }
 
+.font-mahjong-colored-run {
+    display: inline-block;
+    white-space: pre;
+    font-family: "Mahjong Colored", sans-serif;
+    font-variant-ligatures: common-ligatures discretionary-ligatures contextual;
+    font-feature-settings: "rlig" 1, "liga" 1, "clig" 1, "calt" 1, "dlig" 1, "ccmp" 1;
+    text-rendering: optimizeLegibility;
+}
+
 .rot-90 {
     display: inline-block;
     vertical-align: middle;
@@ -104,6 +113,9 @@ img {
 
 .rot-90-char {
     display: inline-block;
+    font-variant-ligatures: common-ligatures discretionary-ligatures contextual;
+    font-feature-settings: "rlig" 1, "liga" 1, "clig" 1, "calt" 1, "dlig" 1, "ccmp" 1;
+    text-rendering: optimizeLegibility;
     transform: rotate(-90deg);
     transform-origin: center;
 }

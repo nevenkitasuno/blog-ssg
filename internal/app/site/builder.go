@@ -836,7 +836,7 @@ func isSupportedInlineTag(tag string) bool {
 func renderInlineTag(tag, inner string) string {
 	switch tag {
 	case "font-mahjong-colored":
-		return `<span class="font-mahjong-colored">` + inner + `</span>`
+		return `<span class="font-mahjong-colored"><span class="font-mahjong-colored-run">` + inner + `</span></span>`
 	case "rot-90":
 		return renderRot90HTML(inner)
 	default:

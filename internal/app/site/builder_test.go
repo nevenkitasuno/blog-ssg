@@ -130,7 +130,7 @@ func TestRenderTopicThemeCSS(t *testing.T) {
 func TestTransformCustomInlineTags(t *testing.T) {
 	got := transformCustomInlineTags(`Про правило [font-mahjong-colored]🀁 [rot-90]🀂 🀃[/rot-90] 🀄[/font-mahjong-colored]`)
 	for _, want := range []string{
-		`<span class="font-mahjong-colored">`,
+		`<span class="font-mahjong-colored"><span class="font-mahjong-colored-run">`,
 		`<span class="rot-90">`,
 		`<span class="rot-90-char">🀂 🀃</span>`,
 	} {
@@ -142,7 +142,7 @@ func TestTransformCustomInlineTags(t *testing.T) {
 
 func TestRenderPageHTMLKeepsAsteriskInsideCustomFontTag(t *testing.T) {
 	got := string(renderPageHTML(`[font-mahjong-colored]5p*[/font-mahjong-colored]`, "/tmp/page/index.html", "/tmp/page"))
-	if !strings.Contains(got, `<span class="font-mahjong-colored">5p*</span>`) {
+	if !strings.Contains(got, `<span class="font-mahjong-colored"><span class="font-mahjong-colored-run">5p*</span></span>`) {
 		t.Fatalf("renderPageHTML() = %q", got)
 	}
 	if strings.Contains(got, `<em>`) || strings.Contains(got, `\5p`) {
