@@ -101,6 +101,8 @@ img {
     display: inline-block;
     white-space: pre;
     font-family: "Mahjong Colored", sans-serif;
+    font-size: 2em;
+    line-height: 1;
     font-variant-ligatures: common-ligatures discretionary-ligatures contextual;
     font-feature-settings: "rlig" 1, "liga" 1, "clig" 1, "calt" 1, "dlig" 1, "ccmp" 1;
     text-rendering: optimizeLegibility;
