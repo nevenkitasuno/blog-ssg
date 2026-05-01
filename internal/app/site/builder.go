@@ -631,7 +631,7 @@ func renderTopicPreviewHTML(preview string) template.HTML {
 
 func renderTopicThemeCSS(theme domain.TopicTheme, fontURL string) template.CSS {
 	blocks := make([]string, 0, 2)
-	rules := make([]string, 0, 9)
+	rules := make([]string, 0, 10)
 	appendRule := func(variable, value string) {
 		if value == "" {
 			return
@@ -650,6 +650,7 @@ font-display: swap;
 	}
 
 	appendRule("--color-background", theme.Background)
+	appendRule("--color-text", theme.Text)
 	appendRule("--color-accent", theme.Accent)
 	appendRule("--color-heading", theme.Heading)
 	appendRule("--color-muted", theme.Muted)
@@ -671,6 +672,7 @@ func topicThemeFingerprint(theme domain.TopicTheme) string {
 		theme.Background,
 		theme.FontFamily,
 		theme.FontFile,
+		theme.Text,
 		theme.Accent,
 		theme.Heading,
 		theme.Muted,

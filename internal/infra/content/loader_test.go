@@ -170,6 +170,7 @@ func TestLoaderLoadsTopicTheme(t *testing.T) {
 
 	writeEntryPage(t, filepath.Join(topicDir, "2025 12 11 Entry with date", "1.md"), "Preview")
 	if err := os.WriteFile(filepath.Join(topicDir, "meta", "Theme.yaml"), []byte(`background: "#f5f7fa"
+text: "#111111"
 accent: "#123456"
 heading: "#654321"
 muted: slategray
@@ -186,7 +187,7 @@ code_border: "#cccccc"`), 0o644); err != nil {
 	}
 
 	theme := blog.Topics[0].Theme
-	if theme.Background != "#f5f7fa" || theme.Accent != "#123456" || theme.Heading != "#654321" || theme.Muted != "slategray" {
+	if theme.Background != "#f5f7fa" || theme.Text != "#111111" || theme.Accent != "#123456" || theme.Heading != "#654321" || theme.Muted != "slategray" {
 		t.Fatalf("theme = %+v", theme)
 	}
 	if theme.Surface != "rgba(1, 2, 3, 0.4)" || theme.Border != "rgba(10, 20, 30, 0.5)" {

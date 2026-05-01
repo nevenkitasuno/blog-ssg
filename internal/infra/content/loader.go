@@ -35,6 +35,7 @@ type topicThemeFile struct {
 	Background string `yaml:"background"`
 	FontFamily string `yaml:"font_family"`
 	FontFile   string `yaml:"font_file"`
+	Text       string `yaml:"text"`
 	Accent     string `yaml:"accent"`
 	Heading    string `yaml:"heading"`
 	Muted      string `yaml:"muted"`
@@ -469,6 +470,7 @@ func normalizeTopicTheme(raw topicThemeFile) domain.TopicTheme {
 		Background: normalizeColorValue(raw.Background),
 		FontFamily: normalizeFontFamily(raw.FontFamily),
 		FontFile:   normalizeFontFile(raw.FontFile),
+		Text:       normalizeColorValue(raw.Text),
 		Accent:     normalizeColorValue(raw.Accent),
 		Heading:    normalizeColorValue(raw.Heading),
 		Muted:      normalizeColorValue(raw.Muted),

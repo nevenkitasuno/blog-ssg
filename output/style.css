@@ -13,6 +13,7 @@
 :root {
     --font-topic: sans-serif;
     --color-background: #ffffff;
+    --color-text: #000000;
     --color-accent: #fa6432;
     --color-heading: #333;
     --color-muted: #666;
@@ -28,6 +29,7 @@ html {
     height: 100%;
     font: 100%/1.5 sans-serif;
     font-family: var(--font-topic);
+    color: var(--color-text);
     word-wrap: break-word;
     background-color: var(--color-background);
     margin: 0 auto;

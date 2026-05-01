@@ -99,6 +99,7 @@ func TestTopicBannerURL(t *testing.T) {
 func TestRenderTopicThemeCSS(t *testing.T) {
 	theme := domain.TopicTheme{
 		Background: "#f5f7fa",
+		Text:       "#111111",
 		Accent:     "#123456",
 		Heading:    "#654321",
 		Muted:      "slategray",
@@ -111,6 +112,7 @@ func TestRenderTopicThemeCSS(t *testing.T) {
 	got := string(renderTopicThemeCSS(theme, ""))
 	for _, want := range []string{
 		"--color-background: #f5f7fa;",
+		"--color-text: #111111;",
 		"--color-accent: #123456;",
 		"--color-heading: #654321;",
 		"--color-muted: slategray;",
