@@ -132,12 +132,27 @@ func TestTransformCustomInlineTags(t *testing.T) {
 	for _, want := range []string{
 		`<span class="font-mahjong-colored">`,
 		`<span class="rot-90">`,
-		`<span class="rot-90-char">🀂</span>`,
-		`<span class="rot-90-char">🀃</span>`,
-		`<span class="rot-90-gap"></span>`,
+		`<span class="rot-90-char">🀂 🀃</span>`,
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("transformCustomInlineTags() = %q, missing %q", got, want)
 		}
+	}
+}
+
+func TestRenderPageHTMLKeepsAsteriskInsideCustomFontTag(t *testing.T) {
+	got := string(renderPageHTML(`[font-mahjong-colored]5p*[/font-mahjong-colored]`, "/tmp/page/index.html", "/tmp/page"))
+	if !strings.Contains(got, `<span class="font-mahjong-colored">5p*</span>`) {
+		t.Fatalf("renderPageHTML() = %q", got)
+	}
+	if strings.Contains(got, `<em>`) || strings.Contains(got, `\5p`) {
+		t.Fatalf("renderPageHTML() parsed markdown inside custom tag: %q", got)
+	}
+}
+
+func TestRenderPageHTMLRotatesWholeSequenceAsOneUnit(t *testing.T) {
+	got := string(renderPageHTML(`[font-mahjong-colored][rot-90]5p*[/rot-90][/font-mahjong-colored]`, "/tmp/page/index.html", "/tmp/page"))
+	if !strings.Contains(got, `<span class="rot-90"><span class="rot-90-char">5p*</span></span>`) {
+		t.Fatalf("renderPageHTML() = %q", got)
 	}
 }

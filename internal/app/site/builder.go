@@ -212,7 +212,7 @@ func (b *Builder) plan(blog domain.Blog) ([]generatedFile, error) {
 
 		topicPath := filepath.Join(b.outputDir, "topics", topic.Slug, "index.html")
 		topicData := buildTopicView(topic, topicPath, b.outputDir)
-		topicFingerprint := hashStrings(templateDigest, topic.Name, topicThemeFingerprint(topic.Theme))
+		topicFingerprint := hashStrings(templateDigest, "topic-render-v2", topic.Name, topicThemeFingerprint(topic.Theme))
 		for _, link := range topic.Links {
 			topicFingerprint = hashStrings(topicFingerprint, link.Label, link.Target, fmt.Sprintf("%t", link.External))
 		}
@@ -309,7 +309,7 @@ func (b *Builder) planEntryFiles(topic domain.Topic, topicBaseDir string) []gene
 			viewCopy := view
 			fingerprint := hashStrings(
 				b.renderer.Digest(),
-				"page-render-v2",
+				"page-render-v3",
 				topic.Name,
 				topicThemeFingerprint(topic.Theme),
 				entry.Name,
@@ -395,7 +395,7 @@ func (b *Builder) planTagFiles(topic domain.Topic) []generatedFile {
 			},
 		)
 
-		fingerprint := hashStrings(b.renderer.Digest(), topic.Name, tag, topicThemeFingerprint(topic.Theme))
+		fingerprint := hashStrings(b.renderer.Digest(), "topic-render-v2", topic.Name, tag, topicThemeFingerprint(topic.Theme))
 		for _, link := range topic.Links {
 			fingerprint = hashStrings(fingerprint, link.Label, link.Target, fmt.Sprintf("%t", link.External))
 		}
@@ -442,7 +442,7 @@ func (b *Builder) planTopicMetaFiles(topic domain.Topic, topicBaseDir string) []
 		viewCopy := view
 		files = append(files, generatedFile{
 			path:        pagePath,
-			fingerprint: hashStrings(b.renderer.Digest(), topic.Name, topicThemeFingerprint(topic.Theme), metaPage.Name, metaPage.File.Path, metaPage.File.Body),
+			fingerprint: hashStrings(b.renderer.Digest(), "page-render-v3", topic.Name, topicThemeFingerprint(topic.Theme), metaPage.Name, metaPage.File.Path, metaPage.File.Body),
 			render: func() ([]byte, error) {
 				return b.renderer.RenderPage(viewCopy)
 			},
@@ -626,7 +626,9 @@ func renderTopicPreviewHTML(preview string) template.HTML {
 		return ""
 	}
 
-	return template.HTML(markdown.ToHTML([]byte(transformCustomInlineTags(preview)), nil, nil))
+	protected, replacements := protectCustomInlineTags(preview)
+	rendered := string(markdown.ToHTML([]byte(protected), nil, nil))
+	return template.HTML(restoreCustomInlineTags(rendered, replacements))
 }
 
 func renderTopicThemeCSS(theme domain.TopicTheme, fontURL string) template.CSS {
@@ -751,17 +753,24 @@ func renderPageHTML(markdownBody, pagePath, entryDir string) template.HTML {
 		return fmt.Sprintf("![](%s)", imagePath)
 	})
 
-	normalized = transformCustomInlineTags(normalized)
-
-	return template.HTML(markdown.ToHTML([]byte(normalized), nil, nil))
+	protected, replacements := protectCustomInlineTags(normalized)
+	rendered := string(markdown.ToHTML([]byte(protected), nil, nil))
+	return template.HTML(restoreCustomInlineTags(rendered, replacements))
 }
 
 func transformCustomInlineTags(input string) string {
-	rendered, _, _ := parseCustomInlineTags(input, 0, "", true)
-	return rendered
+	protected, replacements := protectCustomInlineTags(input)
+	return restoreCustomInlineTags(protected, replacements)
 }
 
-func parseCustomInlineTags(input string, start int, closingTag string, topLevel bool) (string, int, bool) {
+func protectCustomInlineTags(input string) (string, map[string]string) {
+	replacements := map[string]string{}
+	nextID := 0
+	protected, _, _ := parseCustomInlineTags(input, 0, "", true, replacements, &nextID)
+	return protected, replacements
+}
+
+func parseCustomInlineTags(input string, start int, closingTag string, topLevel bool, replacements map[string]string, nextID *int) (string, int, bool) {
 	var builder strings.Builder
 	i := start
 
@@ -776,9 +785,17 @@ func parseCustomInlineTags(input string, start int, closingTag string, topLevel 
 				}
 
 				if isSupportedInlineTag(tag) {
-					inner, after, closed := parseCustomInlineTags(input, next, tag, false)
+					inner, after, closed := parseCustomInlineTags(input, next, tag, false, replacements, nextID)
 					if closed {
-						builder.WriteString(renderInlineTag(tag, inner))
+						rendered := renderInlineTag(tag, inner)
+						if topLevel {
+							token := fmt.Sprintf("CUSTOMINLINE%dTOKEN", *nextID)
+							*nextID = *nextID + 1
+							replacements[token] = rendered
+							builder.WriteString(token)
+						} else {
+							builder.WriteString(rendered)
+						}
 						i = after
 						continue
 					}
@@ -797,6 +814,14 @@ func parseCustomInlineTags(input string, start int, closingTag string, topLevel 
 	}
 
 	return builder.String(), i, false
+}
+
+func restoreCustomInlineTags(input string, replacements map[string]string) string {
+	output := input
+	for token, replacement := range replacements {
+		output = strings.ReplaceAll(output, token, replacement)
+	}
+	return output
 }
 
 func isSupportedInlineTag(tag string) bool {
@@ -820,19 +845,7 @@ func renderInlineTag(tag, inner string) string {
 }
 
 func renderRot90HTML(inner string) string {
-	var builder strings.Builder
-	builder.WriteString(`<span class="rot-90">`)
-	for _, r := range inner {
-		if unicode.IsSpace(r) {
-			builder.WriteString(`<span class="rot-90-gap"></span>`)
-			continue
-		}
-		builder.WriteString(`<span class="rot-90-char">`)
-		builder.WriteString(template.HTMLEscapeString(string(r)))
-		builder.WriteString(`</span>`)
-	}
-	builder.WriteString(`</span>`)
-	return builder.String()
+	return `<span class="rot-90"><span class="rot-90-char">` + inner + `</span></span>`
 }
 
 func fileFingerprint(path string) (string, error) {

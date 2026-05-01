@@ -6,7 +6,7 @@
 
 @font-face {
     font-family: "Mahjong Colored";
-    src: local("Mahjong.Colored.woff2") format("woff2");
+    src: url("fonts/Riichi-Mahjong-Colorful.woff2") format("woff2");
     font-display: swap;
 }
 
@@ -98,9 +98,7 @@ img {
 }
 
 .rot-90 {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.1em;
+    display: inline-block;
     vertical-align: middle;
 }
 
@@ -108,11 +106,6 @@ img {
     display: inline-block;
     transform: rotate(-90deg);
     transform-origin: center;
-}
-
-.rot-90-gap {
-    display: inline-block;
-    width: 0.5em;
 }
 
 .topic-banner {
