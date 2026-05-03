@@ -213,12 +213,12 @@ func (b *Builder) plan(blog domain.Blog) ([]generatedFile, error) {
 		topicBaseDir := filepath.Join(b.outputDir, "topics", topic.Slug)
 		topicPath := filepath.Join(topicBaseDir, "index.html")
 		topicData := buildTopicView(topic, topicPath, b.outputDir)
-		topicFingerprint := hashStrings(templateDigest, "topic-render-v2", topic.Name, topic.Slug, topicThemeFingerprint(topic.Theme))
+		topicFingerprint := hashStrings(templateDigest, "topic-render-v3", topic.Name, topic.Slug, topicThemeFingerprint(topic.Theme))
 		for _, link := range topic.Links {
 			topicFingerprint = hashStrings(topicFingerprint, link.Label, link.Target, fmt.Sprintf("%t", link.External))
 		}
 		for _, metaPage := range topic.Meta {
-			topicFingerprint = hashStrings(topicFingerprint, metaPage.Name, metaPage.File.Path, metaPage.File.Body)
+			topicFingerprint = hashStrings(topicFingerprint, metaPage.Name, metaPage.Slug, metaPage.File.Path, metaPage.File.Body)
 		}
 		for _, asset := range topic.Assets {
 			assetFingerprint, err := fileFingerprint(asset.Path)
@@ -227,7 +227,7 @@ func (b *Builder) plan(blog domain.Blog) ([]generatedFile, error) {
 			}
 		}
 		for _, entry := range topic.Entries {
-			topicFingerprint = hashStrings(topicFingerprint, entry.Name, strings.Join(entry.Tags, "\x00"))
+			topicFingerprint = hashStrings(topicFingerprint, entry.Name, entry.Slug, strings.Join(entry.Tags, "\x00"))
 			for _, page := range entry.Pages {
 				topicFingerprint = hashStrings(topicFingerprint, page.File.Path, page.File.Body)
 			}
@@ -396,15 +396,15 @@ func (b *Builder) planTagFiles(topic domain.Topic) []generatedFile {
 			},
 		)
 
-		fingerprint := hashStrings(b.renderer.Digest(), "topic-render-v2", topic.Name, topic.Slug, tag, topicThemeFingerprint(topic.Theme))
+		fingerprint := hashStrings(b.renderer.Digest(), "topic-render-v3", topic.Name, topic.Slug, tag, slugifySegment(tag), topicThemeFingerprint(topic.Theme))
 		for _, link := range topic.Links {
 			fingerprint = hashStrings(fingerprint, link.Label, link.Target, fmt.Sprintf("%t", link.External))
 		}
 		for _, metaPage := range topic.Meta {
-			fingerprint = hashStrings(fingerprint, metaPage.Name, metaPage.File.Path, metaPage.File.Body)
+			fingerprint = hashStrings(fingerprint, metaPage.Name, metaPage.Slug, metaPage.File.Path, metaPage.File.Body)
 		}
 		for _, entry := range tagEntries[tag] {
-			fingerprint = hashStrings(fingerprint, entry.Name, strings.Join(entry.Tags, "\x00"))
+			fingerprint = hashStrings(fingerprint, entry.Name, entry.Slug, strings.Join(entry.Tags, "\x00"))
 			for _, page := range entry.Pages {
 				fingerprint = hashStrings(fingerprint, page.File.Path, page.File.Body)
 			}
