@@ -8,11 +8,11 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"unicode"
 
 	"gopkg.in/yaml.v2"
 
 	"github.com/nevenkitasuno/blog-ssg/internal/domain"
+	"github.com/nevenkitasuno/blog-ssg/internal/slug"
 )
 
 var (
@@ -614,26 +614,5 @@ func isParagraphBlock(lines []string) bool {
 }
 
 func slugify(value string) string {
-	var builder strings.Builder
-	lastDash := false
-
-	for _, r := range strings.ToLower(strings.TrimSpace(value)) {
-		switch {
-		case unicode.IsLetter(r) || unicode.IsDigit(r):
-			builder.WriteRune(r)
-			lastDash = false
-		case unicode.IsSpace(r) || r == '-' || r == '_' || unicode.IsPunct(r) || unicode.IsSymbol(r):
-			if !lastDash && builder.Len() > 0 {
-				builder.WriteByte('-')
-				lastDash = true
-			}
-		}
-	}
-
-	slug := strings.Trim(builder.String(), "-")
-	if slug == "" {
-		return "item"
-	}
-
-	return slug
+	return slug.Value(value, "item")
 }

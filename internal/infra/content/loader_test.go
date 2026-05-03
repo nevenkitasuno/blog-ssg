@@ -98,6 +98,25 @@ func TestLoaderRejectsInvalidDayInEntryDirectory(t *testing.T) {
 	}
 }
 
+func TestLoaderTransliteratesCyrillicEntrySlug(t *testing.T) {
+	root := t.TempDir()
+	topicDir := filepath.Join(root, "Gallery")
+	if err := os.MkdirAll(topicDir, 0o755); err != nil {
+		t.Fatalf("mkdir topic: %v", err)
+	}
+
+	writeEntryPage(t, filepath.Join(topicDir, "2026 03 Коты", "1.md"), "Preview")
+
+	blog, err := NewLoader(root).Load()
+	if err != nil {
+		t.Fatalf("load blog: %v", err)
+	}
+
+	if got := blog.Topics[0].Entries[0].Slug; got != "2026-03-koty" {
+		t.Fatalf("entry slug = %q, want %q", got, "2026-03-koty")
+	}
+}
+
 func TestLoaderExtractsTopicLinks(t *testing.T) {
 	root := t.TempDir()
 	topicDir := filepath.Join(root, "Gallery")

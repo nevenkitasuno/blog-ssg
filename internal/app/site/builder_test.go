@@ -61,7 +61,7 @@ func TestResolveTopicLink(t *testing.T) {
 		{
 			name: "entry later page",
 			link: domain.TopicLink{Label: "Page", Target: "2026 03 Коты/2.md"},
-			want: "2026-03-коты/2/index.html",
+			want: "2026-03-koty/2/index.html",
 		},
 		{
 			name: "topic meta page",
